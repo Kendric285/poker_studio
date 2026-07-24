@@ -1,0 +1,10 @@
+{
+  "name": "preflop-studio",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Static NLH preflop advisor with drills, range study, and review tools.",
+  "scripts": {
+    "test": "node tests/logic.test.js"
+  },
+  "devDependencies": {}
+}

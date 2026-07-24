@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="description" content="A configurable no-limit hold'em preflop decision coach for 2 to 10 players and any cash-game stakes." />
+  <title>Preflop Studio</title>
+  <link rel="stylesheet" href="src/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand" aria-label="Preflop Studio home">
+        <div class="brand-mark">PS</div>
+        <div class="brand-copy"><strong>Preflop Studio</strong><span>Poker advisor for no-limit hold'em</span></div>
+      </div>
+      <nav class="nav-tabs" aria-label="Primary">
+        <button class="nav-tab active" data-view="coach">Coach</button>
+        <button class="nav-tab" data-view="postflop">Postflop</button>
+        <button class="nav-tab" data-view="drills">Drills</button>
+        <button class="nav-tab" data-view="ranges">Range Lab</button>
+        <button class="nav-tab" data-view="tools">Tools</button>
+      </nav>
+      <div class="top-actions">
+        <button class="icon-btn" id="mobileViewBtn" title="Switch section" aria-label="Switch section">☰</button>
+        <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle light or dark theme">◐</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app">
+    <section class="view active" id="view-coach">
+      <div class="hero-strip">
+        <div>
+          <p class="eyebrow">Build the spot visually</p>
+          <h1>Make the preflop decision simpler.</h1>
+          <p class="lede">Choose your seat at the table, add your cards, and describe the action. The advisor updates instantly with a baseline play, exploit adjustment, sizing, pot odds, and a plan for avoiding expensive one-pair mistakes.</p>
+        </div>
+        <div class="status-pills">
+          <span class="pill"><span class="dot"></span><strong id="heroStatus">BTN</strong> selected</span>
+          <span class="pill"><strong id="stakeStatus">$1 / $2</strong></span>
+          <span class="pill"><strong id="stackStatus">100 BB</strong> effective</span>
+        </div>
+      </div>
+
+      <div class="coach-grid">
+        <section class="panel">
+          <div class="panel-head">
+            <div><h2>Table setup</h2><p>Click a seat to make it yours. The button and positions update with table size.</p></div>
+            <button class="soft-btn small" id="resetBtn">Reset spot</button>
+          </div>
+          <div class="panel-body">
+            <div class="table-controls">
+              <div class="field">
+                <label for="playerCount">Players</label>
+                <select id="playerCount">
+                  <option value="2">2-handed</option><option value="3">3-handed</option><option value="4">4-handed</option><option value="5">5-handed</option><option value="6">6-handed</option><option value="7">7-handed</option><option value="8">8-handed</option><option value="9" selected>9-handed</option><option value="10">10-handed</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Stakes</label>
+                <div class="input-pair">
+                  <input id="currency" value="$" maxlength="3" aria-label="Currency symbol" />
+                  <div class="input-pair" style="grid-template-columns:1fr 1fr"><input id="smallBlind" type="number" min="0.01" step="0.01" value="1" aria-label="Small blind" /><input id="bigBlind" type="number" min="0.02" step="0.01" value="2" aria-label="Big blind" /></div>
+                </div>
+              </div>
+              <div class="field">
+                <label for="effectiveStack">Effective stack</label>
+                <div class="input-with-suffix"><input id="effectiveStack" type="number" min="10" max="1000" step="5" value="100" /><span>BB</span></div>
+              </div>
+            </div>
+
+            <div class="table-stage" id="tableStage" aria-label="Interactive poker table">
+              <div class="table-glow"></div>
+              <div class="poker-table">
+                <div class="felt-center"><div><strong id="feltHand">Choose two cards</strong><span id="feltContext">9-handed · $1 / $2</span></div></div>
+              </div>
+              <div class="seats-layer" id="seatsLayer"></div>
+              <div class="table-hint">◎ Select your position directly on the table</div>
+            </div>
+
+            <div class="cards-and-action">
+              <div class="card-picker-wrap">
+                <span class="field-label">Your hand</span>
+                <div class="hand-entry">
+                  <input id="handInput" class="hand-input" type="text" inputmode="text" maxlength="6" placeholder="KQ / KQo / KQs / TT" aria-label="Type hand notation, for example KQ, KQo, or KQs" autocomplete="off" spellcheck="false" />
+                </div>
+                <div class="card-row">
+                  <button class="card-slot empty" id="cardSlot1" data-slot="0" aria-label="Choose first card">＋</button>
+                  <button class="card-slot empty" id="cardSlot2" data-slot="1" aria-label="Choose second card">＋</button>
+                  <div class="card-actions">
+                    <button class="soft-btn small" id="randomHandBtn">Random</button>
+                    <button class="soft-btn small" id="clearCardsBtn">Clear</button>
+                  </div>
+                </div>
+              </div>
+              <div class="scenario-wrap">
+                <span class="field-label">Action before you</span>
+                <div class="segments" id="scenarioSegments">
+                  <button class="segment active" data-scenario="unopened">Unopened</button>
+                  <button class="segment" data-scenario="limpers">Limpers</button>
+                  <button class="segment" data-scenario="open">Facing open</button>
+                  <button class="segment" data-scenario="openCallers">Open + callers</button>
+                  <button class="segment" data-scenario="threeBet">Facing 3-bet</button>
+                  <button class="segment" data-scenario="fourBet">Facing 4-bet</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="panel decision-panel">
+          <div class="panel-head"><div><h2>Decision context</h2><p>Only controls relevant to this action are shown.</p></div></div>
+          <div class="panel-body">
+            <form class="context-form" id="coachForm">
+              <div class="form-grid" id="dynamicFields"></div>
+
+              <details class="advanced">
+                <summary><span>Table and opponent adjustments</span><span>＋</span></summary>
+                <div class="advanced-body">
+                  <div class="form-grid">
+                    <div class="field"><label for="environment">Environment</label><select id="environment"><option value="live" selected>Live</option><option value="online">Online</option></select></div>
+                    <div class="field"><label for="tableTexture">Table texture</label><select id="tableTexture"><option value="tight">Tight</option><option value="normal" selected>Mixed / unknown</option><option value="loosePassive">Loose-passive</option><option value="aggressive">Aggressive</option></select></div>
+                    <div class="field"><label for="playersBehind">Players behind</label><select id="playersBehind"><option value="passive">Mostly passive</option><option value="normal" selected>Unknown</option><option value="squeezy">Likely to squeeze</option></select></div>
+                    <div class="field"><label for="blindTendency">Blinds</label><select id="blindTendency"><option value="tight">Fold too much</option><option value="normal" selected>Unknown</option><option value="sticky">Call too much</option><option value="aggressive">3-bet often</option></select></div>
+                  </div>
+                  <div>
+                    <span class="field-label">Observed tendencies</span>
+                    <div class="read-tags" id="readTags">
+                      <button type="button" class="read-tag" data-read="overvaluesPairs">Overvalues pairs</button>
+                      <button type="button" class="read-tag" data-read="callsTooMuch">Calls too much</button>
+                      <button type="button" class="read-tag" data-read="bluffsTooMuch">Bluffs too much</button>
+                      <button type="button" class="read-tag" data-read="jamsWide">Jams too wide</button>
+                      <button type="button" class="read-tag" data-read="underbluffs">Underbluffs</button>
+                    </div>
+                  </div>
+                </div>
+              </details>
+
+              <button class="primary-btn" type="submit">Save recommendation</button>
+            </form>
+          </div>
+        </aside>
+      </div>
+
+      <div class="result-wrap panel" id="resultPanel" aria-live="polite">
+        <div class="result-empty"><strong>Add your cards to see the spot.</strong><br />The result will separate the baseline decision from the opponent-specific adjustment.</div>
+      </div>
+    </section>
+
+    <section class="view" id="view-postflop">
+      <div class="hero-strip">
+        <div>
+          <p class="eyebrow">Postflop engine</p>
+          <h1>Study the board, price, and range.</h1>
+          <p class="lede">Enter your exact hand and board. The engine calculates showdown equity against a selected range, then turns the math into a clear betting, calling, or folding plan.</p>
+        </div>
+      </div>
+
+      <div class="postflop-layout">
+        <section class="panel">
+          <div class="panel-head">
+            <div><h2>Postflop spot</h2><p>Use exact cards for the hand and board, such as As Ks on Ah 7d 2c.</p></div>
+            <button class="soft-btn small" id="postflopUseCoachHandBtn" type="button">Use coach hand</button>
+          </div>
+          <div class="panel-body">
+            <div class="postflop-form">
+              <div class="field">
+                <label for="postflopHandInput">Your exact hand</label>
+                <input id="postflopHandInput" class="hand-input" value="As Ks" placeholder="As Ks" autocomplete="off" spellcheck="false" />
+              </div>
+              <div class="field">
+                <label for="postflopBoardInput">Board</label>
+                <input id="postflopBoardInput" class="hand-input" value="Ah 7d 2c" placeholder="Ah 7d 2c / Ah 7d 2c Jc / Ah 7d 2c Jc 4s" autocomplete="off" spellcheck="false" />
+              </div>
+              <div class="field">
+                <label for="postflopProfile">Villain range</label>
+                <select id="postflopProfile">
+                  <option value="standard" selected>Standard continue</option>
+                  <option value="tight">Tight / value-heavy</option>
+                  <option value="wide">Wide / sticky</option>
+                  <option value="drawHeavy">Draw-heavy aggressive</option>
+                  <option value="any">Any two cards</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="postflopPosition">Position</label>
+                <select id="postflopPosition"><option value="ip" selected>In position</option><option value="oop">Out of position</option></select>
+              </div>
+              <div class="field">
+                <label for="postflopInitiative">Initiative</label>
+                <select id="postflopInitiative"><option value="yes" selected>You were aggressor</option><option value="no">Villain was aggressor</option></select>
+              </div>
+              <div class="field">
+                <label for="postflopIterations">Engine depth</label>
+                <select id="postflopIterations"><option value="6000">Fast</option><option value="15000" selected>Standard</option><option value="50000">Deep</option></select>
+              </div>
+              <div class="field">
+                <label for="postflopPot">Pot size</label>
+                <div class="input-with-suffix"><input id="postflopPot" type="number" min="0.1" step="0.5" value="12" /><span>BB</span></div>
+              </div>
+              <div class="field">
+                <label for="postflopFacingBet">Facing bet</label>
+                <div class="input-with-suffix"><input id="postflopFacingBet" type="number" min="0" step="0.5" value="0" /><span>BB</span></div>
+              </div>
+              <div class="field">
+                <label for="postflopBetSize">Bet size to test</label>
+                <div class="input-with-suffix"><input id="postflopBetSize" type="number" min="0.1" step="0.5" value="8" /><span>BB</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="panel postflop-help">
+          <div class="panel-head"><div><h2>Engine notes</h2><p>What this advice is based on.</p></div></div>
+          <div class="panel-body">
+            <div class="engine-note"><strong>Real calculation</strong><span>Evaluates 5-7 card Hold'em hands and estimates equity against the selected range.</span></div>
+            <div class="engine-note"><strong>Not a full solver tree</strong><span>It does not solve every bet size and future action like Pio/GTO Wizard. It gives a practical line from equity, price, board texture, and range pressure.</span></div>
+            <div class="engine-note"><strong>Plain-English output</strong><span>The recommendation says what to do, why, and what mistake to avoid.</span></div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="result-wrap panel" id="postflopResultPanel" aria-live="polite">
+        <div class="result-empty"><strong>Add a hand and board to see postflop advice.</strong><br />The engine will calculate equity and explain the line in plain language.</div>
+      </div>
+    </section>
+
+    <section class="view" id="view-drills">
+      <div class="hero-strip">
+        <div><p class="eyebrow">Practice mode</p><h1>Train the decision, then review the leak.</h1><p class="lede">Run quick preflop drills with instant advisor feedback, session accuracy, and a replay path back into the coach.</p></div>
+      </div>
+      <div class="drill-layout">
+        <aside class="panel tool-card">
+          <h2>Drill setup</h2>
+          <p>Focus the randomizer on a spot family, position, and hand class.</p>
+          <div class="tool-fields">
+            <div class="field"><label for="drillScenario">Spot family</label><select id="drillScenario"><option value="mixed" selected>Mixed</option><option value="unopened">Unopened</option><option value="limpers">Limpers</option><option value="open">Facing open</option><option value="openCallers">Open + callers</option><option value="threeBet">Facing 3-bet</option><option value="fourBet">Facing 4-bet</option></select></div>
+            <div class="field"><label for="drillPosition">Hero seat</label><select id="drillPosition"><option value="random" selected>Random</option><option value="current">Current seat</option><option value="UTG">UTG</option><option value="MP">MP</option><option value="LJ">LJ</option><option value="HJ">HJ</option><option value="CO">CO</option><option value="BTN">BTN</option><option value="SB">SB</option><option value="BB">BB</option></select></div>
+            <div class="field"><label for="drillFocus">Hand focus</label><select id="drillFocus"><option value="all" selected>All hands</option><option value="close">Close decisions</option><option value="premium">Premium value</option><option value="blindDefense">Blind defense</option><option value="dominated">Dominated broadways</option></select></div>
+            <div class="field"><label for="drillAutoLoad">Coach sync</label><select id="drillAutoLoad"><option value="yes" selected>Load every hand</option><option value="no">Keep drills separate</option></select></div>
+          </div>
+          <button class="primary-btn" id="newDrillBtn" type="button" style="margin-top:14px">New drill hand</button>
+          <button class="soft-btn" id="loadDrillBtn" type="button" style="margin-top:9px">Load current drill in Coach</button>
+        </aside>
+
+        <section class="panel tool-card">
+          <h2>Decision drill</h2>
+          <div class="drill-spot" id="drillSpot">
+            <div class="drill-hand" id="drillHand">KQo</div>
+            <div class="drill-context" id="drillContext">BTN · unopened · 100 BB</div>
+          </div>
+          <div class="drill-actions" id="drillActions">
+            <button class="answer-btn" data-answer="fold" type="button"><strong>Fold</strong><span>Release the hand</span></button>
+            <button class="answer-btn" data-answer="call" type="button"><strong>Call / Check</strong><span>Continue without raising</span></button>
+            <button class="answer-btn" data-answer="raise" type="button"><strong>Raise / 3-bet</strong><span>Apply pressure</span></button>
+            <button class="answer-btn" data-answer="mix" type="button"><strong>Mix</strong><span>Close-frequency spot</span></button>
+          </div>
+          <div class="drill-feedback" id="drillFeedback">Answer the spot to start building a session profile.</div>
+          <div class="metric-row" style="margin-top:14px">
+            <div class="metric"><span>Accuracy</span><strong id="drillAccuracy">0%</strong></div>
+            <div class="metric"><span>Correct</span><strong id="drillCorrect">0</strong></div>
+            <div class="metric"><span>Volume</span><strong id="drillVolume">0</strong></div>
+            <div class="metric"><span>Streak</span><strong id="drillStreak">0</strong></div>
+          </div>
+          <div class="drill-history" id="drillHistory"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view" id="view-ranges">
+      <div class="hero-strip">
+        <div><p class="eyebrow">Study mode</p><h1>See the range, not just the answer.</h1><p class="lede">The matrix adapts to the current table size and position. Click any hand to load a representative suited, offsuit, or paired combination into the coach.</p></div>
+      </div>
+      <div class="range-layout">
+        <aside class="panel range-sidebar">
+          <h2>Opening position</h2>
+          <p>These are simplified baseline ranges for unopened pots. Real recommendations still change with stacks, rake, antes, player tendencies, and format.</p>
+          <div class="position-list" id="rangePositionList"></div>
+          <div class="field"><label for="rangePlayerCount">Table size</label><select id="rangePlayerCount"><option value="2">2-handed</option><option value="3">3-handed</option><option value="4">4-handed</option><option value="5">5-handed</option><option value="6">6-handed</option><option value="7">7-handed</option><option value="8">8-handed</option><option value="9" selected>9-handed</option><option value="10">10-handed</option></select></div>
+        </aside>
+        <section class="panel range-main">
+          <div class="range-summary"><div><h2 id="rangeTitle">BTN opening range</h2><p id="rangeDescription">A wide late-position baseline.</p></div><div class="range-number"><strong id="rangePercent">0%</strong><span id="rangeCombos">0 combinations</span></div></div>
+          <div class="range-matrix" id="rangeMatrix"></div>
+          <div class="range-legend"><span class="legend-item"><span class="legend-swatch open"></span>Baseline open</span><span class="legend-item"><span class="legend-swatch fringe"></span>Borderline exploit</span><span class="legend-item"><span class="legend-swatch"></span>Fold by default</span></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view" id="view-tools">
+      <div class="hero-strip"><div><p class="eyebrow">Useful math and review</p><h1>Turn table time into measurable decisions.</h1><p class="lede">Blind cost, session guardrails, and recent hands help you decide whether the spot, table, and stakes all deserve your attention.</p></div></div>
+      <div class="tools-grid">
+        <section class="panel tool-card">
+          <h2>Blind tax calculator</h2>
+          <p>Estimate forced blind and ante contributions over a chosen number of hands.</p>
+          <div class="tool-fields">
+            <div class="field"><label for="taxPlayers">Players</label><input id="taxPlayers" type="number" min="2" max="10" value="9" /></div>
+            <div class="field"><label for="taxHands">Hands</label><input id="taxHands" type="number" min="0" value="100" /></div>
+            <div class="field"><label for="taxSB">Small blind</label><input id="taxSB" type="number" min="0" step="0.01" value="1" /></div>
+            <div class="field"><label for="taxBB">Big blind</label><input id="taxBB" type="number" min="0.01" step="0.01" value="2" /></div>
+            <div class="field"><label for="taxAnte">Ante per player</label><input id="taxAnte" type="number" min="0" step="0.01" value="0" /></div>
+            <div class="field"><label for="taxCurrency">Currency</label><input id="taxCurrency" value="$" maxlength="3" /></div>
+          </div>
+          <div class="tool-output" id="taxOutput"></div>
+        </section>
+
+        <section class="panel tool-card">
+          <h2>Session advisor</h2>
+          <p>Check whether the game size and stop-loss fit your bankroll before the cards start moving.</p>
+          <div class="tool-fields">
+            <div class="field"><label for="sessionBankroll">Bankroll</label><input id="sessionBankroll" type="number" min="0" step="25" value="2000" /></div>
+            <div class="field"><label for="sessionBuyIn">Buy-in</label><input id="sessionBuyIn" type="number" min="1" step="5" value="200" /></div>
+            <div class="field"><label for="sessionStopLoss">Stop-loss</label><div class="input-with-suffix"><input id="sessionStopLoss" type="number" min="0" step="0.5" value="2" /><span>BI</span></div></div>
+            <div class="field"><label for="sessionTableQuality">Table quality</label><select id="sessionTableQuality"><option value="soft" selected>Soft</option><option value="unknown">Unknown</option><option value="tough">Tough</option></select></div>
+          </div>
+          <div class="tool-output" id="sessionOutput"></div>
+        </section>
+
+        <section class="panel tool-card">
+          <h2>Hand review analyzer</h2>
+          <p>Paste short hand notes to compare your recorded action against the advisor baseline.</p>
+          <div class="field" style="margin-top:14px">
+            <label for="reviewInput">Review notes</label>
+            <textarea id="reviewInput" placeholder="BTN KQ unopened raise&#10;BB A9s facing open call&#10;CO 77 vs 3-bet fold"></textarea>
+          </div>
+          <button class="primary-btn" id="reviewAnalyzeBtn" type="button" style="margin-top:12px">Review hands</button>
+          <div class="tool-output" id="reviewOutput"></div>
+        </section>
+
+        <section class="panel tool-card">
+          <h2>Recent recommendations</h2>
+          <p>The last six analyzed spots are stored locally in this browser only.</p>
+          <div class="recent-list" id="recentList"></div>
+          <button class="soft-btn" id="clearHistoryBtn" style="margin-top:12px">Clear history</button>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <button class="mobile-nav-btn active" data-view="coach">Coach</button>
+    <button class="mobile-nav-btn" data-view="postflop">Postflop</button>
+    <button class="mobile-nav-btn" data-view="drills">Drills</button>
+    <button class="mobile-nav-btn" data-view="ranges">Range Lab</button>
+    <button class="mobile-nav-btn" data-view="tools">Tools</button>
+  </nav>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden></div>
+  <section class="deck-popover" id="deckPopover" role="dialog" aria-modal="true" aria-labelledby="deckTitle" hidden>
+    <div class="deck-head"><div><h3 id="deckTitle">Choose a card</h3><div style="color:var(--muted);font-size:.8rem">Selected cards are disabled.</div></div><button class="icon-btn" id="closeDeckBtn" aria-label="Close card picker">×</button></div>
+    <div class="deck-grid" id="deckGrid"></div>
+  </section>
+  <div class="toast" id="toast"></div>
+
+  <script src="src/poker-model.js" defer></script>
+  <script src="src/holdem-engine.js" defer></script>
+  <script src="src/review-parser.js" defer></script>
+  <script src="src/app.js" defer></script>
+</body>
+</html>
