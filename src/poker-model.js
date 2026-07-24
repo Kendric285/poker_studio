@@ -147,6 +147,47 @@
     return ({ fold: "Fold", call: "Call / Check", raise: "Raise / 3-bet", mix: "Mix" })[bucket] || bucket;
   }
 
+  function blindContributionBB(position, playerCount = 9, smallBlindBB = 0.5) {
+    const sb = Number(smallBlindBB);
+    const normalizedSmallBlind = Number.isFinite(sb) && sb > 0 ? sb : 0.5;
+    const layout = positionLayout(Number(playerCount) || 9);
+    if (!layout.includes(position)) return 0;
+    if (position === "SB" || position === "BTN/SB") return normalizedSmallBlind;
+    if (position === "BB") return 1;
+    return 0;
+  }
+
+  function initialPotBB({ playerCount = 9, smallBlindBB = 0.5, anteBB = 0 } = {}) {
+    const count = Number(playerCount) || 9;
+    const ante = Number(anteBB);
+    const cleanAnte = Number.isFinite(ante) && ante > 0 ? ante : 0;
+    return blindContributionBB("SB", count, smallBlindBB)
+      + blindContributionBB("BTN/SB", count, smallBlindBB)
+      + blindContributionBB("BB", count, smallBlindBB)
+      + count * cleanAnte;
+  }
+
+  function addedContributionBB(position, totalBetBB, options = {}) {
+    const total = Number(totalBetBB);
+    if (!Number.isFinite(total) || total <= 0) return 0;
+    const posted = blindContributionBB(position, options.playerCount, options.smallBlindBB);
+    return Math.max(0, total - posted);
+  }
+
+  function potWithTotalBets({ playerCount = 9, smallBlindBB = 0.5, anteBB = 0, bets = [] } = {}) {
+    return initialPotBB({ playerCount, smallBlindBB, anteBB })
+      + bets.reduce((sum, bet) => sum + addedContributionBB(bet.position, bet.totalBetBB, { playerCount, smallBlindBB }), 0);
+  }
+
+  function callCostBB(heroPosition, facingTotalBB, currentHeroTotalBB, options = {}) {
+    const facing = Number(facingTotalBB);
+    if (!Number.isFinite(facing) || facing <= 0) return 0;
+    const current = currentHeroTotalBB == null
+      ? blindContributionBB(heroPosition, options.playerCount, options.smallBlindBB)
+      : Number(currentHeroTotalBB);
+    return Math.max(0, facing - (Number.isFinite(current) ? current : 0));
+  }
+
   function validateSpot({ playerCount = 9, position, scenario, cards }) {
     const layout = positionLayout(playerCount);
     if (!layout.includes(position)) return { valid: false, error: `${position} is not available at a ${playerCount}-handed table.` };
@@ -178,6 +219,11 @@
     scenarioName,
     actionBucket,
     bucketName,
+    blindContributionBB,
+    initialPotBB,
+    addedContributionBB,
+    potWithTotalBets,
+    callCostBB,
     validateSpot
   };
 })(window);
