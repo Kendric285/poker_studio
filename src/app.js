@@ -156,6 +156,7 @@
     startY: 0,
     startPointerAngle: 0,
     startRotation: 0,
+    clickSeatIndex: null,
     moved: false,
     suppressClick: false
   };
@@ -800,12 +801,14 @@
   function beginSeatWheelDrag(event) {
     if (event.button != null && event.button !== 0) return;
     if (event.target.closest("#vpipPopover, .wheel-controls, .seat-vpip-btn, input, select, textarea")) return;
+    const clickedSeat = event.target.closest(".seat");
     seatWheelDrag.active = true;
     seatWheelDrag.pointerId = event.pointerId;
     seatWheelDrag.startX = event.clientX;
     seatWheelDrag.startY = event.clientY;
     seatWheelDrag.startPointerAngle = pointerAngleForEvent(event);
     seatWheelDrag.startRotation = state.seatWheelRotation;
+    seatWheelDrag.clickSeatIndex = clickedSeat ? Number(clickedSeat.dataset.seatIndex) : null;
     seatWheelDrag.moved = false;
     $("tableStage").classList.add("dragging");
     event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -829,6 +832,12 @@
     if (seatWheelDrag.moved) {
       setHeroSeatIndex(nearestSeatIndexForRotation(), { snap: true });
       renderAllCore();
+      seatWheelDrag.suppressClick = true;
+      setTimeout(() => { seatWheelDrag.suppressClick = false; }, 0);
+      return;
+    }
+    if (seatWheelDrag.clickSeatIndex != null && Number.isFinite(seatWheelDrag.clickSeatIndex)) {
+      selectSeatFromWheel(seatWheelDrag.clickSeatIndex);
       seatWheelDrag.suppressClick = true;
       setTimeout(() => { seatWheelDrag.suppressClick = false; }, 0);
       return;
