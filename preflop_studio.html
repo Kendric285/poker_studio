@@ -47,7 +47,7 @@
       <div class="coach-grid">
         <section class="panel">
           <div class="panel-head">
-            <div><h2>Table setup</h2><p>Click a seat to make it yours. The button and positions update with table size.</p></div>
+            <div><h2>Table setup</h2><p>Drag the wheel or click a seat to put it on the selector. Use VPIP buttons for opponents.</p></div>
             <button class="soft-btn small" id="resetBtn">Reset spot</button>
           </div>
           <div class="panel-body">
@@ -71,13 +71,19 @@
               </div>
             </div>
 
-            <div class="table-stage" id="tableStage" aria-label="Interactive poker table">
+            <div class="table-stage" id="tableStage" role="group" tabindex="0" aria-label="Rotatable poker table seat selector" aria-describedby="tableVpipSummary">
               <div class="table-glow"></div>
               <div class="poker-table">
                 <div class="felt-center"><div><strong id="feltHand">Choose two cards</strong><span id="feltContext">9-handed · $1 / $2</span></div></div>
               </div>
+              <div class="seat-selector" aria-hidden="true"><span>You</span></div>
               <div class="seats-layer" id="seatsLayer"></div>
-              <div class="table-hint">◎ Select your position directly on the table</div>
+              <div class="wheel-controls" aria-label="Rotate selected seat">
+                <button class="icon-btn wheel-btn" id="rotateSeatLeftBtn" type="button" aria-label="Move selected seat counterclockwise">←</button>
+                <button class="icon-btn wheel-btn" id="rotateSeatRightBtn" type="button" aria-label="Move selected seat clockwise">→</button>
+              </div>
+              <div class="vpip-popover" id="vpipPopover" hidden></div>
+              <div class="table-hint" id="tableVpipSummary">Avg VPIP: not set</div>
             </div>
 
             <div class="cards-and-action">
@@ -134,6 +140,24 @@
                       <button type="button" class="read-tag" data-read="jamsWide">Jams too wide</button>
                       <button type="button" class="read-tag" data-read="underbluffs">Underbluffs</button>
                     </div>
+                  </div>
+                  <div class="custom-style-panel">
+                    <span class="field-label">Custom player styles</span>
+                    <div class="form-grid">
+                      <div class="field"><label for="customStyleName">Style name</label><input id="customStyleName" maxlength="32" placeholder="Loose caller" /></div>
+                      <div class="field"><label for="customStyleBase">Baseline</label><select id="customStyleBase"><option value="unknown">Unknown</option><option value="nit">Very tight</option><option value="standard" selected>Standard</option><option value="loose">Loose-aggressive</option><option value="callingStation">Calls too much</option><option value="wild">Wild / jams too wide</option></select></div>
+                      <div class="field"><label for="customStyleStrength">Range bias</label><select id="customStyleStrength"><option value="-2">Much wider</option><option value="-1">Wider</option><option value="0" selected>Balanced</option><option value="1">Tighter</option><option value="2">Much tighter</option></select></div>
+                      <div class="field"><label for="customStyleCalls">Calling</label><select id="customStyleCalls"><option value="tight">Under-calls</option><option value="balanced" selected>Balanced</option><option value="loose">Over-calls</option></select></div>
+                      <div class="field"><label for="customStyleAggression">Aggression</label><select id="customStyleAggression"><option value="passive">Passive</option><option value="balanced" selected>Balanced</option><option value="active">Active bluffer</option><option value="wild">Wild pressure</option></select></div>
+                      <div class="field"><label for="customStyleSize">Size bias</label><div class="input-with-suffix"><input id="customStyleSize" type="number" min="-1" max="2" step="0.25" value="0" /><span>BB</span></div></div>
+                      <div class="field full"><label for="customStylePostflop">Postflop range</label><select id="customStylePostflop"><option value="standard" selected>Standard continue</option><option value="tight">Tight / value-heavy</option><option value="wide">Wide / sticky</option><option value="drawHeavy">Draw-heavy aggressive</option><option value="any">Any two cards</option></select></div>
+                    </div>
+                    <div class="custom-style-actions">
+                      <button class="soft-btn small" id="newCustomStyleBtn" type="button">New</button>
+                      <button class="soft-btn small" id="saveCustomStyleBtn" type="button">Save style</button>
+                      <button class="soft-btn small" id="deleteCustomStyleBtn" type="button" disabled>Delete</button>
+                    </div>
+                    <div class="custom-style-list" id="customStyleList"></div>
                   </div>
                 </div>
               </details>

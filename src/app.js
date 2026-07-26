@@ -35,8 +35,15 @@
     scenario: "unopened",
     cards: [null, null],
     activeCardSlot: 0,
+    heroSeatIndex: 0,
+    buttonSeatIndex: 0,
+    seatWheelRotation: 180,
+    vpipBySeat: {},
+    vpipEditorSeat: null,
     rangePosition: "BTN",
     readTags: new Set(),
+    customStyles: [],
+    editingCustomStyleId: "",
     lastResult: null,
     drill: {
       current: null,
@@ -64,6 +71,7 @@
   const OPEN = {
     "UTG": setOf(pairsFrom("5"), ["A2s","A3s","A4s","A5s"], combosFrom("A","9","s"), combosFrom("K","T","s"), combosFrom("Q","T","s"), ["JTs","T9s"], combosFrom("A","J","o"), ["KQo"]),
     "UTG+1": setOf(pairsFrom("4"), ["A2s","A3s","A4s","A5s"], combosFrom("A","8","s"), combosFrom("K","T","s"), combosFrom("Q","T","s"), ["JTs","T9s"], combosFrom("A","J","o"), ["KQo"]),
+    "UTG+2": setOf(pairsFrom("4"), ["A2s","A3s","A4s","A5s"], combosFrom("A","8","s"), combosFrom("K","T","s"), combosFrom("Q","T","s"), ["JTs","T9s","98s"], combosFrom("A","J","o"), ["KQo"]),
     "MP": setOf(pairsFrom("4"), ["A2s","A3s","A4s","A5s"], combosFrom("A","8","s"), combosFrom("K","9","s"), combosFrom("Q","T","s"), ["JTs","T9s","98s"], combosFrom("A","T","o"), combosFrom("K","J","o"), ["QJo"]),
     "LJ": setOf(pairsFrom("3"), ["A2s","A3s","A4s","A5s"], combosFrom("A","7","s"), combosFrom("K","9","s"), combosFrom("Q","9","s"), combosFrom("J","9","s"), ["T9s","98s","87s","76s"], combosFrom("A","9","o"), combosFrom("K","T","o"), ["QJo","JTo"]),
     "HJ": setOf(pairsFrom("2"), combosFrom("A","2","s"), combosFrom("K","8","s"), combosFrom("Q","9","s"), combosFrom("J","9","s"), combosFrom("T","8","s"), combosFrom("9","7","s"), combosFrom("8","6","s"), combosFrom("7","5","s"), ["65s","54s"], combosFrom("A","8","o"), combosFrom("K","T","o"), combosFrom("Q","T","o"), ["JTo"]),
@@ -76,6 +84,7 @@
   const FRINGE = {
     "UTG": setOf(["44","A8s","K9s","Q9s","J9s","98s","ATo","KJo","QJo"]),
     "UTG+1": setOf(["33","A7s","K9s","Q9s","J9s","98s","ATo","KJo","QJo"]),
+    "UTG+2": setOf(["33","A7s","K9s","Q9s","J9s","87s","ATo","KJo","QJo","JTo"]),
     "MP": setOf(["33","A7s","K8s","Q9s","J9s","87s","A9o","KTo","QTo","JTo"]),
     "LJ": setOf(["22","A6s","K8s","Q8s","J8s","T8s","65s","A8o","K9o","QTo"]),
     "HJ": setOf(["K7s","Q8s","J8s","T7s","96s","85s","74s","A7o","K9o","Q9o","J9o"]),
@@ -93,6 +102,7 @@
     combosFrom("7","3","s"), combosFrom("6","3","s"), ["54s","53s","43s"]
   );
   const HU_FRINGE = setOf(["K3o","Q5o","J6o","T6o","95o","85o","75o","64o","74o","63o","52s","42s","32s"]);
+  const HU_OPEN_EXTRA = setOf([...HU_FRINGE], ["K2o","Q4o","J5o","T5o","94o","84o","73o","62s","92s","82s","72s"]);
 
   const THREEBET_TIGHT = setOf(pairsFrom("Q"), ["AKs","AKo"]);
   const THREEBET_NORMAL = setOf(pairsFrom("J"), ["AQs","AKs","AKo"]);
@@ -113,26 +123,77 @@
   const CALL_VS_3BET_TIGHT = setOf(["QQ","JJ","AKs","AKo","AQs"]);
   const CALL_VS_3BET_NORMAL = setOf(["QQ","JJ","TT","99","AKs","AKo","AQs","AJs","KQs","AQo"]);
   const CALL_VS_3BET_WIDE = setOf([...CALL_VS_3BET_NORMAL,"88","77","A5s","A4s","A3s","A2s","ATs","KJs","KTs","QJs","QTs","JTs","T9s","98s","AJo","KQo"]);
-  const CALL_VS_3BET_IP_EXTRA = setOf(["66","55","A9s","A8s","A7s","A6s","K9s","Q9s","J9s","T8s","87s","76s","65s"]);
+  const CALL_VS_3BET_IP_EXTRA = setOf(["66","55","44","33","22","A9s","A8s","A7s","A6s","K9s","K8s","Q9s","Q8s","J9s","J8s","T8s","T7s","98s","87s","76s","65s","54s","KJo","QJo","JTo"]);
+  const BB_GOOD_PRICE_DEFEND = setOf(["Q3s","Q2s","J5s","J4s","T5s","T4s","95s","86s","75s","64s","42s","32s","K7o","Q8o","J8o","T8o","97o","87o","76o"]);
   const LIGHT_4BET = setOf(["A5s","A4s","A3s","A2s"]);
   const PREMIUM_DRILL_HANDS = ["AA","KK","QQ","JJ","TT","AKs","AKo","AQs","AQo","KQs"];
   const BLIND_DEFENSE_DRILL_HANDS = ["A9o","A8s","A5s","KTo","K9s","QTo","Q9s","JTo","J9s","T8s","98s","87s","76s","65s","44","33","22"];
   const DOMINATED_DRILL_HANDS = ["AJo","ATo","A9o","KQo","KJo","KTo","QJo","QTo","JTo"];
   const DRILL_SCENARIOS = ["unopened","limpers","open","openCallers","threeBet","fourBet"];
+  const PROFILE_OPTIONS = [
+    ["unknown", "Unknown"],
+    ["nit", "Very tight"],
+    ["standard", "Standard"],
+    ["loose", "Loose-aggressive"],
+    ["callingStation", "Calls too much"],
+    ["wild", "Wild / jams too wide"]
+  ];
+  const POSTFLOP_PROFILE_OPTIONS = [
+    ["standard", "Standard continue"],
+    ["tight", "Tight / value-heavy"],
+    ["wide", "Wide / sticky"],
+    ["drawHeavy", "Draw-heavy aggressive"],
+    ["any", "Any two cards"]
+  ];
+  const CUSTOM_STYLES_KEY = "preflopStudioCustomStyles";
+  const SEAT_BASE_ANGLE = -90;
+  const SEAT_SELECTOR_ANGLE = 90;
+  const WHEEL_DRAG_THRESHOLD = 5;
+  const seatWheelDrag = {
+    active: false,
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    startPointerAngle: 0,
+    startRotation: 0,
+    moved: false,
+    suppressClick: false
+  };
+  let seatPositionFrame = 0;
+  let seatSelectionRenderTimer = 0;
 
   function normalizedPosition(position) {
-    if (position === "UTG+2") return "MP";
     if (position === "BTN/SB") return "BTN";
     return position;
   }
 
-  function openingSet(position) {
-    if (position === "BTN/SB") return HU_OPEN;
-    return OPEN[normalizedPosition(position)] || OPEN.MP;
+  function shortTablePromotions(position, playerCount = state.playerCount) {
+    const count = Number(playerCount) || state.playerCount || 9;
+    if (count <= 2 && position === "BTN/SB") return HU_OPEN_EXTRA;
+    if (count <= 3 && position === "BTN") return FRINGE.BTN;
+    if (count <= 3 && position === "SB") return FRINGE.SB;
+    if (count <= 4 && position === "BTN") return setOf(["K6o","Q7o","J7o","T7o","97o","87o","J2s","J3s","T2s","T3s","T4s"]);
+    if (count <= 4 && position === "SB") return setOf(["K8o","Q8o","J8o","T8o","98o","K2s","K3s","Q4s","Q5s"]);
+    return new Set();
   }
-  function fringeSet(position) {
+
+  function baseOpeningSet(position) {
+    if (position === "BTN/SB") return HU_OPEN;
+    return OPEN[position] || OPEN[normalizedPosition(position)] || OPEN.MP;
+  }
+
+  function baseFringeSet(position) {
     if (position === "BTN/SB") return HU_FRINGE;
-    return FRINGE[normalizedPosition(position)] || FRINGE.MP;
+    return FRINGE[position] || FRINGE[normalizedPosition(position)] || FRINGE.MP;
+  }
+
+  function openingSet(position, playerCount = state.playerCount) {
+    return setOf([...baseOpeningSet(position)], [...shortTablePromotions(position, playerCount)]);
+  }
+
+  function fringeSet(position, playerCount = state.playerCount) {
+    const open = openingSet(position, playerCount);
+    return setOf([...baseFringeSet(position)].filter((label) => !open.has(label)));
   }
 
   function classifyCards(c1, c2) {
@@ -183,6 +244,349 @@
     catch { return false; }
   }
 
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function clampNumber(value, fallback, min, max) {
+    const number = Number(value);
+    return Number.isFinite(number) ? clamp(number, min, max) : fallback;
+  }
+
+  function customProfileValue(id) {
+    return `custom:${id}`;
+  }
+
+  function customProfileId(profile) {
+    const text = String(profile || "");
+    return text.startsWith("custom:") ? text.slice(7) : "";
+  }
+
+  function sanitizeCustomStyle(style) {
+    if (!style || typeof style !== "object") return null;
+    const id = String(style.id || "").replace(/[^a-z0-9_-]/gi, "").slice(0, 40);
+    const name = String(style.name || "").trim().slice(0, 32);
+    if (!id || !name) return null;
+    const baseProfile = PROFILE_OPTIONS.some(([value]) => value === style.baseProfile) ? style.baseProfile : "standard";
+    const callBias = ["tight","balanced","loose"].includes(style.callBias) ? style.callBias : "balanced";
+    const aggressionBias = ["passive","balanced","active","wild"].includes(style.aggressionBias) ? style.aggressionBias : "balanced";
+    const postflopProfile = POSTFLOP_PROFILE_OPTIONS.some(([value]) => value === style.postflopProfile) ? style.postflopProfile : "standard";
+    return {
+      id,
+      name,
+      baseProfile,
+      strengthOffset: clampNumber(style.strengthOffset, 0, -2, 2),
+      callBias,
+      aggressionBias,
+      sizeBias: clampNumber(style.sizeBias, 0, -1, 2),
+      postflopProfile
+    };
+  }
+
+  function readCustomStyles() {
+    try {
+      const raw = JSON.parse(storageGet(CUSTOM_STYLES_KEY, "[]"));
+      if (!Array.isArray(raw)) return [];
+      const styles = raw.map(sanitizeCustomStyle).filter(Boolean);
+      const seen = new Set();
+      return styles.filter((style) => {
+        if (seen.has(style.id)) return false;
+        seen.add(style.id);
+        return true;
+      }).slice(0, 12);
+    } catch {
+      return [];
+    }
+  }
+
+  function writeCustomStyles() {
+    storageSet(CUSTOM_STYLES_KEY, JSON.stringify(state.customStyles.map(sanitizeCustomStyle).filter(Boolean)));
+  }
+
+  function customStyleForProfile(profile) {
+    const id = customProfileId(profile);
+    return id ? state.customStyles.find((style) => style.id === id) || null : null;
+  }
+
+  function baseProfile(profile) {
+    return customStyleForProfile(profile)?.baseProfile || profile || "unknown";
+  }
+
+  function selectedReads(profile = currentProfile()) {
+    const reads = new Set(state.readTags);
+    const style = customStyleForProfile(profile);
+    if (!style) return reads;
+    if (style.callBias === "loose") reads.add("callsTooMuch");
+    if (style.aggressionBias === "passive") reads.add("underbluffs");
+    if (style.aggressionBias === "active") reads.add("bluffsTooMuch");
+    if (style.aggressionBias === "wild") {
+      reads.add("bluffsTooMuch");
+      reads.add("jamsWide");
+    }
+    return reads;
+  }
+
+  function profileStrengthBias(profile) {
+    const style = customStyleForProfile(profile);
+    if (!style) return 0;
+    let bias = style.strengthOffset;
+    if (style.callBias === "loose") bias += 0.5;
+    if (style.callBias === "tight") bias += 0.5;
+    if (style.aggressionBias === "passive") bias += 1;
+    if (style.aggressionBias === "active") bias -= 0.5;
+    if (style.aggressionBias === "wild") bias -= 1;
+    return bias;
+  }
+
+  function profileSizeBias(profile) {
+    const style = customStyleForProfile(profile);
+    return style ? style.sizeBias : 0;
+  }
+
+  function profileCallsTooMuch(profile = currentProfile()) {
+    return baseProfile(profile) === "callingStation" || selectedReads(profile).has("callsTooMuch");
+  }
+
+  function profileIsNit(profile = currentProfile()) {
+    return baseProfile(profile) === "nit";
+  }
+
+  function profileIsWild(profile = currentProfile()) {
+    return baseProfile(profile) === "wild" || selectedReads(profile).has("jamsWide") || selectedReads(profile).has("bluffsTooMuch");
+  }
+
+  function profileUnderbluffs(profile = currentProfile()) {
+    return selectedReads(profile).has("underbluffs");
+  }
+
+  function postflopProfileFor(profile) {
+    return customStyleForProfile(profile)?.postflopProfile || profile || "standard";
+  }
+
+  function positiveModulo(value, size) {
+    return ((value % size) + size) % size;
+  }
+
+  function activeSeatCount(playerCount = state.playerCount) {
+    const count = Number(playerCount);
+    return POSITION_LAYOUTS[count] ? count : 9;
+  }
+
+  function activeSeatIndexes(playerCount = state.playerCount) {
+    return Array.from({ length: activeSeatCount(playerCount) }, (_, index) => index);
+  }
+
+  function seatId(index) {
+    return `seat-${index}`;
+  }
+
+  function positionOrderForCount(playerCount = state.playerCount) {
+    const count = activeSeatCount(playerCount);
+    const layout = POSITION_LAYOUTS[count];
+    if (count === 2) return ["BTN/SB", "BB"];
+    return ["BTN", "SB", "BB", ...layout.filter((position) => !["BTN","SB","BB"].includes(position))];
+  }
+
+  function seatPositionLabel(seatIndex, playerCount = state.playerCount, buttonSeatIndex = state.buttonSeatIndex) {
+    const order = positionOrderForCount(playerCount);
+    const count = order.length;
+    const button = positiveModulo(Math.round(Number(buttonSeatIndex) || 0), count);
+    return order[positiveModulo(Math.round(Number(seatIndex) || 0) - button, count)];
+  }
+
+  function seatIndexForPosition(position, playerCount = state.playerCount, buttonSeatIndex = state.buttonSeatIndex) {
+    const order = positionOrderForCount(playerCount);
+    const offset = order.indexOf(position);
+    if (offset < 0) return -1;
+    const button = positiveModulo(Math.round(Number(buttonSeatIndex) || 0), order.length);
+    return positiveModulo(button + offset, order.length);
+  }
+
+  function normalizeDegrees(angle) {
+    const value = Number(angle) || 0;
+    return positiveModulo(value, 360);
+  }
+
+  function signedAngleDelta(fromAngle, toAngle) {
+    return positiveModulo(Number(toAngle) - Number(fromAngle) + 180, 360) - 180;
+  }
+
+  function angularDistance(firstAngle, secondAngle) {
+    return Math.abs(signedAngleDelta(firstAngle, secondAngle));
+  }
+
+  function seatBaseAngle(seatIndex, playerCount = state.playerCount) {
+    return SEAT_BASE_ANGLE + positiveModulo(Math.round(Number(seatIndex) || 0), activeSeatCount(playerCount)) * (360 / activeSeatCount(playerCount));
+  }
+
+  function nearestEquivalentAngle(targetAngle, currentAngle = state.seatWheelRotation) {
+    return Number(currentAngle) + signedAngleDelta(currentAngle, targetAngle);
+  }
+
+  function seatWheelRotationForSeat(seatIndex, playerCount = state.playerCount, currentRotation = state.seatWheelRotation) {
+    return nearestEquivalentAngle(SEAT_SELECTOR_ANGLE - seatBaseAngle(seatIndex, playerCount), currentRotation);
+  }
+
+  function nearestSeatIndexForRotation(rotation = state.seatWheelRotation, playerCount = state.playerCount) {
+    let bestIndex = 0;
+    let bestDistance = Infinity;
+    activeSeatIndexes(playerCount).forEach((seatIndex) => {
+      const distance = angularDistance(seatBaseAngle(seatIndex, playerCount) + Number(rotation || 0), SEAT_SELECTOR_ANGLE);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = seatIndex;
+      }
+    });
+    return bestIndex;
+  }
+
+  function sanitizeVpipMap(raw) {
+    if (!raw || typeof raw !== "object") return {};
+    return Object.entries(raw).reduce((values, [key, value]) => {
+      const match = /^seat-(\d+)$/.exec(key);
+      const number = Number(value);
+      if (match && Number.isFinite(number) && number >= 0 && number <= 100) values[key] = number;
+      return values;
+    }, {});
+  }
+
+  function validateVpipValue(value) {
+    if (value == null || String(value).trim() === "") return { valid: true, empty: true, value: null, error: "" };
+    const number = Number(value);
+    if (!Number.isFinite(number)) return { valid: false, empty: false, value: null, error: "Enter a VPIP percentage from 0 to 100." };
+    if (number < 0 || number > 100) return { valid: false, empty: false, value: null, error: "VPIP must be between 0% and 100%." };
+    return { valid: true, empty: false, value: Math.round(number * 10) / 10, error: "" };
+  }
+
+  function seatVpip(seatIndex) {
+    const value = state.vpipBySeat[seatId(seatIndex)];
+    return Number.isFinite(Number(value)) ? Number(value) : null;
+  }
+
+  function setSeatVpip(seatIndex, value) {
+    const count = activeSeatCount();
+    const index = positiveModulo(Math.round(Number(seatIndex) || 0), count);
+    const parsed = validateVpipValue(value);
+    if (!parsed.valid) return parsed;
+    const id = seatId(index);
+    if (parsed.empty) delete state.vpipBySeat[id];
+    else state.vpipBySeat[id] = parsed.value;
+    return parsed;
+  }
+
+  function averageOpponentVpip(playerCount = state.playerCount, heroSeatIndex = state.heroSeatIndex, vpipBySeat = state.vpipBySeat) {
+    const count = activeSeatCount(playerCount);
+    const hero = positiveModulo(Math.round(Number(heroSeatIndex) || 0), count);
+    const values = activeSeatIndexes(count)
+      .filter((seatIndex) => seatIndex !== hero)
+      .map((seatIndex) => Number(vpipBySeat[seatId(seatIndex)]))
+      .filter((value) => Number.isFinite(value) && value >= 0 && value <= 100);
+    if (!values.length) return null;
+    return values.reduce((sum, value) => sum + value, 0) / values.length;
+  }
+
+  function tableVpipContext() {
+    const average = averageOpponentVpip();
+    if (average == null) return { average: null, count: 0, band: "unknown", tight: false, loose: false, veryLoose: false };
+    const count = activeSeatIndexes().filter((seatIndex) => seatIndex !== state.heroSeatIndex && seatVpip(seatIndex) != null).length;
+    const veryLoose = average >= 45;
+    const loose = average >= 34;
+    const tight = average <= 18;
+    const band = veryLoose ? "veryLoose" : loose ? "loose" : tight ? "tight" : "normal";
+    return { average, count, band, tight, loose, veryLoose };
+  }
+
+  function tableVpipStrengthBias(profile = currentProfile()) {
+    const context = tableVpipContext();
+    if (context.average == null) return 0;
+    const profileKey = baseProfile(profile);
+    if (!["unknown","standard"].includes(profileKey)) return 0;
+    if (context.tight) return 1;
+    if (context.veryLoose) return -1;
+    if (context.loose) return -0.5;
+    return 0;
+  }
+
+  function tableVpipCallsTooMuch() {
+    const context = tableVpipContext();
+    return context.loose || context.veryLoose;
+  }
+
+  function ensureSeatState(options = {}) {
+    const count = activeSeatCount();
+    state.buttonSeatIndex = positiveModulo(Math.round(Number(state.buttonSeatIndex) || 0), count);
+    state.heroSeatIndex = positiveModulo(Math.round(Number(state.heroSeatIndex) || 0), count);
+    if (options.preferPosition && positionLayout().includes(state.heroPosition)) {
+      const seatIndex = seatIndexForPosition(state.heroPosition);
+      if (seatIndex >= 0) state.heroSeatIndex = seatIndex;
+    }
+    state.heroPosition = seatPositionLabel(state.heroSeatIndex);
+    if (options.snap !== false) state.seatWheelRotation = seatWheelRotationForSeat(state.heroSeatIndex);
+    state.vpipBySeat = sanitizeVpipMap(state.vpipBySeat);
+    if (state.vpipEditorSeat != null) {
+      const editorSeat = Number(state.vpipEditorSeat);
+      state.vpipEditorSeat = Number.isFinite(editorSeat) && editorSeat >= 0 && editorSeat < count && editorSeat !== state.heroSeatIndex ? editorSeat : null;
+    }
+  }
+
+  function setHeroSeatIndex(seatIndex, options = {}) {
+    const count = activeSeatCount(options.playerCount || state.playerCount);
+    state.heroSeatIndex = positiveModulo(Math.round(Number(seatIndex) || 0), count);
+    state.heroPosition = seatPositionLabel(state.heroSeatIndex);
+    state.vpipEditorSeat = state.vpipEditorSeat === state.heroSeatIndex ? null : state.vpipEditorSeat;
+    if (options.snap !== false) state.seatWheelRotation = seatWheelRotationForSeat(state.heroSeatIndex);
+    if (options.render) renderAllCore();
+    return state.heroPosition;
+  }
+
+  function setHeroPosition(position, options = {}) {
+    const seatIndex = seatIndexForPosition(position);
+    if (seatIndex >= 0) return setHeroSeatIndex(seatIndex, options);
+    state.heroPosition = position;
+    if (options.render) renderAllCore();
+    return state.heroPosition;
+  }
+
+  function finishSeatSelectionRender(options = {}) {
+    if (options.render !== false) renderAllCore();
+  }
+
+  function selectSeatFromWheel(seatIndex, options = {}) {
+    closeVpipPopover();
+    setHeroSeatIndex(seatIndex, { snap: true });
+    if (options.render === false) return state.heroSeatIndex;
+
+    if (seatSelectionRenderTimer) clearTimeout(seatSelectionRenderTimer);
+    if (options.animate !== false && $("seatsLayer")?.children.length) {
+      renderSeatPositions();
+      seatSelectionRenderTimer = setTimeout(() => {
+        seatSelectionRenderTimer = 0;
+        finishSeatSelectionRender(options);
+      }, 170);
+    } else {
+      finishSeatSelectionRender(options);
+    }
+    return state.heroSeatIndex;
+  }
+
+  function rotateSeatWheel(delta, options = {}) {
+    return selectSeatFromWheel(state.heroSeatIndex + Number(delta || 0), options);
+  }
+
+  function handleSeatWheelKey(event, options = {}) {
+    const key = event?.key;
+    if (!["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(key)) return false;
+    event.preventDefault?.();
+    const delta = key === "ArrowRight" || key === "ArrowDown" ? 1 : -1;
+    rotateSeatWheel(delta, options);
+    return true;
+  }
+
   function positionLayout() { return POSITION_LAYOUTS[state.playerCount]; }
   function preflopIndex(position) { return positionLayout().indexOf(position); }
   function postflopOrder() {
@@ -209,52 +613,227 @@
     return blindPostedBB(state.heroPosition);
   }
 
+  function seatPoint(seatIndex) {
+    const count = activeSeatCount();
+    const angle = (seatBaseAngle(seatIndex) + Number(state.seatWheelRotation || 0)) * Math.PI / 180;
+    const rx = count >= 8 ? 42 : count <= 4 ? 36 : 39.5;
+    const ry = count >= 8 ? 40.5 : count <= 4 ? 35.5 : 38;
+    return { x: 50 + rx * Math.cos(angle), y: 50 + ry * Math.sin(angle) };
+  }
+
+  function renderVpipSummary() {
+    const summary = $("tableVpipSummary");
+    if (!summary) return;
+    const context = tableVpipContext();
+    summary.textContent = context.average == null
+      ? "Avg VPIP: not set"
+      : `Avg VPIP: ${context.average.toFixed(0)}% from ${context.count} opponent${context.count === 1 ? "" : "s"}`;
+  }
+
+  function updateSeatVpipBadge(seatIndex) {
+    const button = document.querySelector(`.seat[data-seat-index="${seatIndex}"]`);
+    if (!button) return;
+    const badge = button.querySelector(".seat-vpip-btn");
+    if (!badge) return;
+    const value = seatVpip(seatIndex);
+    badge.textContent = value == null ? "VPIP --" : `VPIP ${value}%`;
+    badge.classList.toggle("empty", value == null);
+  }
+
+  function positionVpipPopover() {
+    const popover = $("vpipPopover");
+    if (!popover || popover.hidden || state.vpipEditorSeat == null) return;
+    const point = seatPoint(state.vpipEditorSeat);
+    const above = point.y > 52;
+    popover.style.left = `${clamp(point.x, 18, 82)}%`;
+    popover.style.top = `${clamp(point.y + (above ? -18 : 16), 13, 87)}%`;
+    popover.classList.toggle("above", above);
+  }
+
+  function closeVpipPopover() {
+    state.vpipEditorSeat = null;
+    const popover = $("vpipPopover");
+    if (popover) popover.hidden = true;
+  }
+
+  function renderVpipPopover() {
+    const popover = $("vpipPopover");
+    if (!popover) return;
+    if (state.vpipEditorSeat == null || state.vpipEditorSeat === state.heroSeatIndex) {
+      closeVpipPopover();
+      return;
+    }
+    const seatIndex = state.vpipEditorSeat;
+    const position = seatPositionLabel(seatIndex);
+    const currentValue = seatVpip(seatIndex);
+    popover.hidden = false;
+    popover.innerHTML = `
+      <label for="seatVpipInput">Seat ${seatIndex + 1} ${position} VPIP</label>
+      <div class="input-with-suffix"><input id="seatVpipInput" type="number" min="0" max="100" step="1" inputmode="decimal" value="${currentValue == null ? "" : currentValue}" aria-describedby="seatVpipError"><span>%</span></div>
+      <div class="vpip-error" id="seatVpipError" aria-live="polite"></div>
+      <div class="vpip-actions"><button class="soft-btn small" id="clearSeatVpipBtn" type="button">Clear</button><button class="soft-btn small" id="closeSeatVpipBtn" type="button">Done</button></div>`;
+    positionVpipPopover();
+    const input = $("seatVpipInput");
+    const error = $("seatVpipError");
+    const applyInput = () => {
+      const parsed = setSeatVpip(seatIndex, input.value);
+      input.classList.toggle("invalid", !parsed.valid);
+      input.setAttribute("aria-invalid", parsed.valid ? "false" : "true");
+      error.textContent = parsed.error;
+      if (!parsed.valid) return;
+      updateSeatVpipBadge(seatIndex);
+      renderVpipSummary();
+      renderStatus();
+      savePreferences();
+      autoAnalyze();
+    };
+    input.addEventListener("input", applyInput);
+    $("clearSeatVpipBtn").addEventListener("click", () => {
+      input.value = "";
+      applyInput();
+      input.focus();
+    });
+    $("closeSeatVpipBtn").addEventListener("click", closeVpipPopover);
+    input.focus();
+    input.select();
+  }
+
+  function openSeatVpipEditor(seatIndex, options = {}) {
+    const index = positiveModulo(Math.round(Number(seatIndex) || 0), activeSeatCount());
+    if (index === state.heroSeatIndex) {
+      closeVpipPopover();
+      return false;
+    }
+    state.vpipEditorSeat = index;
+    if (options.render !== false) renderVpipPopover();
+    return true;
+  }
+
+  function renderSeatPositions() {
+    const alignedSeat = nearestSeatIndexForRotation();
+    document.querySelectorAll("[data-seat-index]").forEach((element) => {
+      const seatIndex = Number(element.dataset.seatIndex);
+      const point = seatPoint(seatIndex);
+      if (element.classList.contains("dealer-button")) {
+        element.style.left = `${clamp(point.x - 5, 3, 94)}%`;
+        element.style.top = `${clamp(point.y + (point.y < 50 ? 9 : -9), 4, 94)}%`;
+      } else {
+        element.style.left = `${point.x}%`;
+        element.style.top = `${point.y}%`;
+        element.classList.toggle("aligned", seatIndex === alignedSeat);
+      }
+    });
+    positionVpipPopover();
+  }
+
+  function scheduleSeatPositionRender() {
+    if (seatPositionFrame) return;
+    seatPositionFrame = requestAnimationFrame(() => {
+      seatPositionFrame = 0;
+      renderSeatPositions();
+    });
+  }
+
   function renderSeats() {
+    ensureSeatState();
     const layer = $("seatsLayer");
     layer.innerHTML = "";
     const layout = positionLayout();
-    if (!layout.includes(state.heroPosition)) state.heroPosition = layout.includes("BTN") ? "BTN" : layout[0];
     if (!layout.includes(state.rangePosition)) state.rangePosition = state.heroPosition;
-
-    const clockwise = state.playerCount === 2
-      ? ["BTN/SB", "BB"]
-      : ["BTN", "SB", "BB", ...layout.filter((p) => !["BTN","SB","BB"].includes(p))];
-    const startAngle = 68;
-    const rx = 42.5, ry = state.playerCount >= 9 ? 40.5 : 38.5;
-    clockwise.forEach((position, index) => {
-      const angle = (startAngle + index * (360 / clockwise.length)) * Math.PI / 180;
-      const x = 50 + rx * Math.cos(angle);
-      const y = 50 + ry * Math.sin(angle);
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "seat" + (position === state.heroPosition ? " hero" : "");
-      const aggressor = currentAggressorPosition();
-      if (aggressor && position === aggressor && position !== state.heroPosition) btn.classList.add("aggressor");
-      btn.style.left = `${x}%`;
-      btn.style.top = `${y}%`;
-      btn.dataset.position = position;
-      btn.innerHTML = `<span class="seat-pos">${position}</span><span class="seat-role">${position === state.heroPosition ? "You" : position === aggressor ? "Aggressor" : "Seat"}</span>`;
-      btn.addEventListener("click", () => {
-        state.heroPosition = position;
-        renderAllCore();
+    const aggressor = currentAggressorPosition();
+    const alignedSeat = nearestSeatIndexForRotation();
+    activeSeatIndexes().forEach((seatIndex) => {
+      const position = seatPositionLabel(seatIndex);
+      const isHero = seatIndex === state.heroSeatIndex;
+      const vpip = seatVpip(seatIndex);
+      const seatEl = document.createElement("div");
+      seatEl.className = `seat${isHero ? " hero" : ""}${seatIndex === alignedSeat ? " aligned" : ""}`;
+      if (aggressor && position === aggressor && !isHero) seatEl.classList.add("aggressor");
+      seatEl.dataset.seatIndex = String(seatIndex);
+      seatEl.dataset.seatId = seatId(seatIndex);
+      seatEl.dataset.position = position;
+      seatEl.innerHTML = `
+        <button class="seat-select" type="button" aria-label="${isHero ? "Your seat" : "Opponent seat"} ${seatIndex + 1}, ${position}. Select this as your seat${vpip == null || isHero ? "" : `. VPIP ${vpip}%`}">
+          <span class="seat-pos">${position}</span>
+          <span class="seat-role">${isHero ? "You" : aggressor === position ? "Aggressor" : "Opponent"}</span>
+        </button>
+        ${isHero ? "" : `<button class="seat-vpip-btn${vpip == null ? " empty" : ""}" type="button" aria-label="Edit VPIP for seat ${seatIndex + 1}, ${position}">${vpip == null ? "VPIP --" : `VPIP ${vpip}%`}</button>`}`;
+      seatEl.querySelector(".seat-select").addEventListener("click", () => {
+        if (seatWheelDrag.suppressClick) return;
+        selectSeatFromWheel(seatIndex);
       });
-      layer.appendChild(btn);
+      const vpipButton = seatEl.querySelector(".seat-vpip-btn");
+      if (vpipButton) {
+        vpipButton.addEventListener("click", (event) => {
+          event.stopPropagation();
+          openSeatVpipEditor(seatIndex);
+        });
+      }
+      layer.appendChild(seatEl);
 
-      if (position === "BTN" || position === "BTN/SB") {
-        const d = document.createElement("div");
-        d.className = "dealer-button";
-        d.textContent = "D";
-        d.style.left = `${clamp(x - 5, 3, 94)}%`;
-        d.style.top = `${clamp(y + (y < 50 ? 9 : -9), 4, 94)}%`;
-        layer.appendChild(d);
+      if (seatIndex === state.buttonSeatIndex) {
+        const dealer = document.createElement("div");
+        dealer.className = "dealer-button";
+        dealer.textContent = "D";
+        dealer.dataset.seatIndex = String(seatIndex);
+        dealer.setAttribute("aria-hidden", "true");
+        layer.appendChild(dealer);
       }
     });
+    renderSeatPositions();
+    renderVpipSummary();
     $("heroStatus").textContent = state.heroPosition;
   }
 
   function currentAggressorPosition() {
     const el = $("aggressorPosition");
     return el ? el.value : null;
+  }
+
+  function pointerAngleForEvent(event) {
+    const rect = $("tableStage").getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    return Math.atan2(event.clientY - centerY, event.clientX - centerX) * 180 / Math.PI;
+  }
+
+  function beginSeatWheelDrag(event) {
+    if (event.button != null && event.button !== 0) return;
+    if (event.target.closest("#vpipPopover, .wheel-controls, .seat-vpip-btn, input, select, textarea")) return;
+    seatWheelDrag.active = true;
+    seatWheelDrag.pointerId = event.pointerId;
+    seatWheelDrag.startX = event.clientX;
+    seatWheelDrag.startY = event.clientY;
+    seatWheelDrag.startPointerAngle = pointerAngleForEvent(event);
+    seatWheelDrag.startRotation = state.seatWheelRotation;
+    seatWheelDrag.moved = false;
+    $("tableStage").classList.add("dragging");
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
+
+  function updateSeatWheelDrag(event) {
+    if (!seatWheelDrag.active || event.pointerId !== seatWheelDrag.pointerId) return;
+    const moveDistance = Math.hypot(event.clientX - seatWheelDrag.startX, event.clientY - seatWheelDrag.startY);
+    if (moveDistance >= WHEEL_DRAG_THRESHOLD) seatWheelDrag.moved = true;
+    const angleDelta = signedAngleDelta(seatWheelDrag.startPointerAngle, pointerAngleForEvent(event));
+    state.seatWheelRotation = seatWheelDrag.startRotation + angleDelta;
+    scheduleSeatPositionRender();
+    event.preventDefault();
+  }
+
+  function finishSeatWheelDrag(event) {
+    if (!seatWheelDrag.active || event.pointerId !== seatWheelDrag.pointerId) return;
+    seatWheelDrag.active = false;
+    $("tableStage").classList.remove("dragging");
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    if (seatWheelDrag.moved) {
+      setHeroSeatIndex(nearestSeatIndexForRotation(), { snap: true });
+      renderAllCore();
+      seatWheelDrag.suppressClick = true;
+      setTimeout(() => { seatWheelDrag.suppressClick = false; }, 0);
+      return;
+    }
+    renderSeatPositions();
   }
 
   function renderCards(options = {}) {
@@ -278,9 +857,11 @@
   function renderStatus() {
     const symbol = ($("currency").value || "$ ").trim();
     const sb = Number($("smallBlind").value || 0), bb = Number($("bigBlind").value || 0);
+    const vpip = tableVpipContext();
     $("stakeStatus").textContent = `${symbol}${sb} / ${symbol}${bb}`;
     $("stackStatus").textContent = `${Number($("effectiveStack").value || 0)} BB`;
-    $("feltContext").textContent = `${state.playerCount}-handed · ${symbol}${sb} / ${symbol}${bb}`;
+    $("feltContext").textContent = `${state.playerCount}-handed · ${symbol}${sb} / ${symbol}${bb}${vpip.average == null ? "" : ` · Avg VPIP ${vpip.average.toFixed(0)}%`}`;
+    renderVpipSummary();
   }
 
   function scenarioAllowed(scenario, position = state.heroPosition) {
@@ -303,8 +884,24 @@
     });
   }
 
-  function profileOptions() {
-    return `<option value="unknown" selected>Unknown</option><option value="nit">Very tight</option><option value="standard">Standard</option><option value="loose">Loose-aggressive</option><option value="callingStation">Calls too much</option><option value="wild">Wild / jams too wide</option>`;
+  function optionsHtml(options, selected) {
+    return options.map(([value, label]) => `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}>${escapeHtml(label)}</option>`).join("");
+  }
+
+  function customStyleOptionsHtml(selected) {
+    if (!state.customStyles.length) return "";
+    return `<optgroup label="Custom styles">${state.customStyles.map((style) => {
+      const value = customProfileValue(style.id);
+      return `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}>${escapeHtml(style.name)}</option>`;
+    }).join("")}</optgroup>`;
+  }
+
+  function profileOptions(selected = "unknown") {
+    return `${optionsHtml(PROFILE_OPTIONS, selected)}${customStyleOptionsHtml(selected)}`;
+  }
+
+  function postflopProfileOptions(selected = "standard") {
+    return `${optionsHtml(POSTFLOP_PROFILE_OPTIONS, selected)}${customStyleOptionsHtml(selected)}`;
   }
 
   function positionOptions(filter = "all") {
@@ -350,17 +947,17 @@
     }
 
     if (state.scenario === "limpers") {
-      html += `<div class="field"><label for="limperCount">Limpers</label><input id="limperCount" type="number" min="1" max="9" value="2"></div><div class="field"><label for="opponentProfile">Typical limper</label><select id="opponentProfile">${profileOptions()}</select></div>`;
+      html += `<div class="field"><label for="limperCount">Limpers</label><input id="limperCount" type="number" min="1" max="9" value="2"></div><div class="field"><label for="opponentProfile">Typical limper</label><select id="opponentProfile" data-profile-select="opponent">${profileOptions()}</select></div>`;
     }
     if (["open","openCallers"].includes(state.scenario)) {
-      html += `<div class="field"><label for="aggressorPosition">Opener position</label><select id="aggressorPosition">${positionOptions("beforeHero")}</select></div><div class="field"><label for="opponentProfile">Opener profile</label><select id="opponentProfile">${profileOptions()}</select></div><div class="field"><label for="aggressorSize">Open size</label><div class="input-with-suffix"><input id="aggressorSize" type="number" min="2" max="20" step="0.5" value="3"><span>BB</span></div></div>`;
+      html += `<div class="field"><label for="aggressorPosition">Opener position</label><select id="aggressorPosition">${positionOptions("beforeHero")}</select></div><div class="field"><label for="opponentProfile">Opener profile</label><select id="opponentProfile" data-profile-select="opponent">${profileOptions()}</select></div><div class="field"><label for="aggressorSize">Open size</label><div class="input-with-suffix"><input id="aggressorSize" type="number" min="2" max="20" step="0.5" value="3"><span>BB</span></div></div>`;
       if (state.scenario === "openCallers") html += `<div class="field"><label for="callerCount">Cold callers</label><input id="callerCount" type="number" min="1" max="8" value="1"></div>`;
     }
     if (state.scenario === "threeBet") {
-      html += `<div class="field"><label for="heroOpenSize">Your open</label><div class="input-with-suffix"><input id="heroOpenSize" type="number" min="2" max="10" step="0.5" value="${baseOpen}"><span>BB</span></div></div><div class="field"><label for="aggressorPosition">3-bettor position</label><select id="aggressorPosition">${positionOptions("afterHero")}</select></div><div class="field"><label for="opponentProfile">3-bettor profile</label><select id="opponentProfile">${profileOptions()}</select></div><div class="field"><label for="aggressorSize">3-bet size</label><div class="input-with-suffix"><input id="aggressorSize" type="number" min="5" max="50" step="0.5" value="10"><span>BB</span></div></div>`;
+      html += `<div class="field"><label for="heroOpenSize">Your open</label><div class="input-with-suffix"><input id="heroOpenSize" type="number" min="2" max="10" step="0.5" value="${baseOpen}"><span>BB</span></div></div><div class="field"><label for="aggressorPosition">3-bettor position</label><select id="aggressorPosition">${positionOptions("afterHero")}</select></div><div class="field"><label for="opponentProfile">3-bettor profile</label><select id="opponentProfile" data-profile-select="opponent">${profileOptions()}</select></div><div class="field"><label for="aggressorSize">3-bet size</label><div class="input-with-suffix"><input id="aggressorSize" type="number" min="5" max="50" step="0.5" value="10"><span>BB</span></div></div>`;
     }
     if (state.scenario === "fourBet") {
-      html += `<div class="field"><label for="heroThreeBetSize">Your 3-bet</label><div class="input-with-suffix"><input id="heroThreeBetSize" type="number" min="5" max="30" step="0.5" value="10"><span>BB</span></div></div><div class="field"><label for="aggressorPosition">4-bettor position</label><select id="aggressorPosition">${positionOptions("beforeHero")}</select></div><div class="field"><label for="opponentProfile">4-bettor profile</label><select id="opponentProfile">${profileOptions()}</select></div><div class="field"><label for="aggressorSize">4-bet size</label><div class="input-with-suffix"><input id="aggressorSize" type="number" min="12" max="100" step="0.5" value="23"><span>BB</span></div></div>`;
+      html += `<div class="field"><label for="heroThreeBetSize">Your 3-bet</label><div class="input-with-suffix"><input id="heroThreeBetSize" type="number" min="5" max="30" step="0.5" value="10"><span>BB</span></div></div><div class="field"><label for="aggressorPosition">4-bettor position</label><select id="aggressorPosition">${positionOptions("beforeHero")}</select></div><div class="field"><label for="opponentProfile">4-bettor profile</label><select id="opponentProfile" data-profile-select="opponent">${profileOptions()}</select></div><div class="field"><label for="aggressorSize">4-bet size</label><div class="input-with-suffix"><input id="aggressorSize" type="number" min="12" max="100" step="0.5" value="23"><span>BB</span></div></div>`;
     }
 
     wrap.innerHTML = html;
@@ -395,7 +992,7 @@
     const layout = POSITION_LAYOUTS[count].filter((p) => p !== "BB");
     if (!layout.includes(state.rangePosition)) state.rangePosition = layout.includes("BTN") ? "BTN" : layout[0];
     $("rangePositionList").innerHTML = layout.map((position) => {
-      const stats = rangeStats(openingSet(position));
+      const stats = rangeStats(openingSet(position, count));
       return `<button class="position-choice ${position === state.rangePosition ? "active" : ""}" data-position="${position}"><span>${position}</span><small>${stats.percent.toFixed(1)}%</small></button>`;
     }).join("");
     document.querySelectorAll(".position-choice").forEach((button) => button.addEventListener("click", () => { state.rangePosition = button.dataset.position; renderRangeLab(); }));
@@ -534,7 +1131,8 @@
 
   function renderRangeLab() {
     renderRangePositionList();
-    const openSet = openingSet(state.rangePosition), fringe = fringeSet(state.rangePosition);
+    const count = Number($("rangePlayerCount").value);
+    const openSet = openingSet(state.rangePosition, count), fringe = fringeSet(state.rangePosition, count);
     const stats = rangeStats(openSet);
     $("rangeTitle").textContent = `${state.rangePosition} opening range`;
     $("rangeDescription").textContent = openRangeDescription(state.rangePosition);
@@ -561,7 +1159,7 @@
             $("playerCount").value = $("rangePlayerCount").value;
             state.playerCount = Number($("playerCount").value);
           }
-          if (positionLayout().includes(state.rangePosition)) state.heroPosition = state.rangePosition;
+          if (positionLayout().includes(state.rangePosition)) setHeroPosition(state.rangePosition, { snap: true });
           state.scenario = "unopened";
           switchView("coach");
           renderAllCore();
@@ -570,6 +1168,106 @@
         matrix.appendChild(button);
       }
     }
+  }
+
+  function renderPostflopProfileOptions(preferredValue) {
+    const select = $("postflopProfile");
+    if (!select) return;
+    const previous = preferredValue || select.value || "standard";
+    select.innerHTML = postflopProfileOptions(previous);
+    if (!Array.from(select.options).some((option) => option.value === previous)) select.value = "standard";
+  }
+
+  function refreshProfileSelects(preferredValue) {
+    document.querySelectorAll("select[data-profile-select='opponent']").forEach((select) => {
+      const previous = preferredValue || select.value || "unknown";
+      select.innerHTML = profileOptions(previous);
+      if (!Array.from(select.options).some((option) => option.value === previous)) select.value = "unknown";
+    });
+    renderPostflopProfileOptions(preferredValue);
+  }
+
+  function customStyleDraft() {
+    return {
+      id: state.editingCustomStyleId || `style-${Date.now().toString(36)}`,
+      name: ($("customStyleName")?.value || "Custom player").trim() || "Custom player",
+      baseProfile: $("customStyleBase")?.value || "standard",
+      strengthOffset: Number($("customStyleStrength")?.value || 0),
+      callBias: $("customStyleCalls")?.value || "balanced",
+      aggressionBias: $("customStyleAggression")?.value || "balanced",
+      sizeBias: Number($("customStyleSize")?.value || 0),
+      postflopProfile: $("customStylePostflop")?.value || "standard"
+    };
+  }
+
+  function loadCustomStyleEditor(style = null) {
+    state.editingCustomStyleId = style?.id || "";
+    if ($("customStyleName")) $("customStyleName").value = style?.name || "";
+    if ($("customStyleBase")) $("customStyleBase").value = style?.baseProfile || "standard";
+    if ($("customStyleStrength")) $("customStyleStrength").value = String(style?.strengthOffset ?? 0);
+    if ($("customStyleCalls")) $("customStyleCalls").value = style?.callBias || "balanced";
+    if ($("customStyleAggression")) $("customStyleAggression").value = style?.aggressionBias || "balanced";
+    if ($("customStyleSize")) $("customStyleSize").value = String(style?.sizeBias ?? 0);
+    if ($("customStylePostflop")) $("customStylePostflop").value = style?.postflopProfile || "standard";
+    if ($("deleteCustomStyleBtn")) $("deleteCustomStyleBtn").disabled = !style;
+  }
+
+  function renderCustomStyleList() {
+    const list = $("customStyleList");
+    if (!list) return;
+    if (!state.customStyles.length) {
+      list.innerHTML = `<div class="custom-style-empty">No saved styles yet.</div>`;
+      return;
+    }
+    list.innerHTML = state.customStyles.map((style) => {
+      const tags = [
+        PROFILE_OPTIONS.find(([value]) => value === style.baseProfile)?.[1] || "Standard",
+        style.strengthOffset > 0 ? `+${style.strengthOffset} tight` : style.strengthOffset < 0 ? `${style.strengthOffset} loose` : "even",
+        style.callBias === "loose" ? "over-calls" : style.callBias === "tight" ? "under-calls" : "balanced calls",
+        style.aggressionBias === "wild" ? "wild" : style.aggressionBias
+      ].filter(Boolean).join(" · ");
+      return `<button type="button" class="custom-style-item ${style.id === state.editingCustomStyleId ? "active" : ""}" data-style-id="${escapeHtml(style.id)}"><strong>${escapeHtml(style.name)}</strong><span>${escapeHtml(tags)}</span></button>`;
+    }).join("");
+  }
+
+  function renderCustomStyles() {
+    renderCustomStyleList();
+    refreshProfileSelects();
+  }
+
+  function saveCustomStyle() {
+    const style = sanitizeCustomStyle(customStyleDraft());
+    if (!style) {
+      showToast("Name the style before saving it.");
+      return;
+    }
+    const existing = state.customStyles.findIndex((item) => item.id === style.id);
+    if (existing >= 0) state.customStyles.splice(existing, 1, style);
+    else state.customStyles.unshift(style);
+    state.customStyles = state.customStyles.slice(0, 12);
+    state.editingCustomStyleId = style.id;
+    writeCustomStyles();
+    renderCustomStyles();
+    const profileValue = customProfileValue(style.id);
+    const profileSelect = $("opponentProfile");
+    if (profileSelect && Array.from(profileSelect.options).some((option) => option.value === profileValue)) profileSelect.value = profileValue;
+    if ($("postflopProfile") && Array.from($("postflopProfile").options).some((option) => option.value === profileValue)) $("postflopProfile").value = profileValue;
+    autoAnalyze();
+    analyzePostflop();
+    showToast(`${style.name} saved.`);
+  }
+
+  function deleteCustomStyle() {
+    if (!state.editingCustomStyleId) return;
+    const style = state.customStyles.find((item) => item.id === state.editingCustomStyleId);
+    state.customStyles = state.customStyles.filter((item) => item.id !== state.editingCustomStyleId);
+    state.editingCustomStyleId = "";
+    writeCustomStyles();
+    loadCustomStyleEditor();
+    renderCustomStyles();
+    autoAnalyze();
+    analyzePostflop();
+    showToast(`${style?.name || "Style"} deleted.`);
   }
 
   function withArticle(phrase) { return /^[aeiou]/i.test(phrase) ? `an ${phrase}` : `a ${phrase}`; }
@@ -655,7 +1353,6 @@
     return Number.isFinite(number) ? number : fallback;
   }
 
-  function selectedReads() { return state.readTags; }
   function currentProfile() { return $("opponentProfile")?.value || "unknown"; }
 
   function recommendationBase(action, className, headline, summary, sizeBB, confidence, metrics, why, alternatives, commitment, plan, baseline, exploit) {
@@ -708,31 +1405,35 @@
 
   function unopenedRecommendation(hand, label) {
     if (state.heroPosition === "BB") return recommendationBase("NO DECISION", "mix", "The hand is over before the big blind acts", "If every player folds through the small blind, the big blind wins the pot automatically.", 0, "High", {}, ["Choose a different position for an unopened-pot decision."], [], "There is no additional decision to make.", postflopPlan(hand,label), "No baseline action", "No exploit needed");
-    const openSet = openingSet(state.heroPosition), fringe = fringeSet(state.heroPosition);
+    const openSet = openingSet(state.heroPosition, state.playerCount), fringe = fringeSet(state.heroPosition, state.playerCount);
     const inRange = openSet.has(label), isFringe = fringe.has(label);
+    const vpip = tableVpipContext();
+    const looseVpipTable = vpip.loose || vpip.veryLoose;
     const aggressiveBehind = $("playersBehind").value === "squeezy" || $("blindTendency").value === "aggressive";
-    const favorable = stealSeat(state.heroPosition) && $("blindTendency").value === "tight" && !aggressiveBehind;
+    const favorable = stealSeat(state.heroPosition) && ($("blindTendency").value === "tight" || vpip.tight) && !aggressiveBehind && !looseVpipTable;
+    const anteStealPressure = anteInBB() >= 0.1 && stealSeat(state.heroPosition) && !aggressiveBehind && !looseVpipTable;
     const stack = validNumber($("effectiveStack").value, 100);
     let size = validNumber($("openBase")?.value, defaultOpenSizeBB());
     if ($("environment").value === "live" && $("tableTexture").value === "loosePassive") size += 1;
+    if (looseVpipTable) size += vpip.veryLoose ? 1 : 0.5;
     if (state.heroPosition === "SB" || state.heroPosition === "BTN/SB") size += 0.5;
     size = Math.min(size, stack);
     const family = handFamily(hand,label);
     if (inRange) {
-      const borderline = isFringe || aggressiveBehind && !premium(label) && !pairAtLeast(hand,"T");
-      if (borderline && aggressiveBehind) return recommendationBase("MIX", "mix", `${label} is a close open`, "The baseline range opens this hand, but aggressive players behind reduce how often it realizes equity.", size, "Medium", {}, [
+      const borderline = isFringe || aggressiveBehind && !premium(label) && !pairAtLeast(hand,"T") || looseVpipTable && stealSeat(state.heroPosition) && !premium(label) && !pairAtLeast(hand,"T");
+      if (borderline && (aggressiveBehind || looseVpipTable)) return recommendationBase("MIX", "mix", `${label} is a close open`, "The baseline range opens this hand, but table pressure reduces how often it realizes equity.", size, "Medium", {}, [
         `${label} is ${withArticle(family)} near the lower part of the opening range.`,
-        "Frequent 3-bets make marginal opens less profitable.",
+        aggressiveBehind ? "Frequent 3-bets make marginal opens less profitable." : `The entered table average VPIP is ${vpip.average.toFixed(0)}%, so steals get called more often.`,
         "Folding the bottom of a range is different from becoming overly tight."
       ], ["Raise more often when the players behind are passive.", "Fold more often when a strong player has position on you."], "Do not defend a later 3-bet only because you already opened.", postflopPlan(hand,label), "Open-raise rather than limp first in.", "Trim the weakest opens when the table attacks them correctly.");
       return recommendationBase("RAISE", "raise", `Open ${label}`, "This hand belongs in the simplified opening range for your position and table size.", size, confidenceFor(false), {}, [
         `${label} is ${withArticle(family)} with enough strength or playability for ${state.heroPosition}.`,
         `${positionLayout().length - 1 - preflopIndex(state.heroPosition)} player(s) remain behind you.`,
         "Entering as the raiser gives you initiative and a chance to win without seeing a flop."
-      ], ["Limping first in usually sacrifices fold equity.", "Calling is not available because nobody has entered the pot."], "If you later face heavy action, reassess from zero. The open is sunk money.", postflopPlan(hand,label), "Raise or fold in unopened pots.", $("blindTendency").value === "sticky" ? "Use the larger size and keep the range value-heavy against sticky blinds." : "No major deviation is needed without a stronger read.");
+      ], ["Limping first in usually sacrifices fold equity.", "Calling is not available because nobody has entered the pot."], "If you later face heavy action, reassess from zero. The open is sunk money.", postflopPlan(hand,label), "Raise or fold in unopened pots.", $("blindTendency").value === "sticky" || looseVpipTable ? "Use the larger size and keep the range value-heavy against sticky callers." : "No major deviation is needed without a stronger read.");
     }
-    if (isFringe && favorable) return recommendationBase("RAISE", "raise", `Steal with ${label}`, "This is outside the default range, but tight blinds make a selective late-position steal reasonable.", size, "Medium", {}, [
-      "Tight blinds increase immediate fold equity.",
+    if (isFringe && (favorable || anteStealPressure)) return recommendationBase("RAISE", "raise", `Steal with ${label}`, "This is outside the default range, but the table conditions make a selective late-position steal reasonable.", size, "Medium", {}, [
+      favorable ? vpip.tight ? "Low average VPIP increases immediate fold equity." : "Tight blinds increase immediate fold equity." : "Antes increase the dead money, so late-position steals need less raw hand strength.",
       "The hand is close enough to the baseline range to use selectively.",
       "The exploit stops working if the blinds defend or 3-bet more often."
     ], ["Fold at a normal or aggressive table.", "Do not widen every offsuit hand just because one steal is available."], "A failed steal is not a reason to continue after the conditions change.", postflopPlan(hand,label), "Fold by default.", "Open as a targeted exploit against over-folding blinds.");
@@ -740,7 +1441,7 @@
       `${label} is ${withArticle(family)} that does not realize enough equity from ${state.heroPosition}.`,
       "More players behind means more chances to run into a stronger range.",
       "Folding now avoids difficult dominated-pair decisions later."
-    ], ["It may become an open from a later seat.", "A suited version may have enough playability where the offsuit version does not."], "Folding costs no additional chips. You do not need to recover blinds on this hand.", postflopPlan(hand,label), "Fold.", "Only widen with a clear table-specific reason.");
+    ], ["It may become an open from a later seat.", "A suited version may have enough playability where the offsuit version does not."], "Folding costs no additional chips. You do not need to recover blinds on this hand.", postflopPlan(hand,label), "Fold.", vpip.tight ? "A low-VPIP table can justify selected late-position fringe steals, not wholesale widening." : "Only widen with a clear table-specific reason.");
   }
 
   function limpedRecommendation(hand,label) {
@@ -748,18 +1449,21 @@
     const profile = currentProfile();
     const oop = ["SB","BB"].includes(state.heroPosition);
     const stack = validNumber($("effectiveStack").value, 100);
+    const vpip = tableVpipContext();
     let size = validNumber($("openBase")?.value, defaultOpenSizeBB()) + limpers;
     if (oop) size += 1;
     if ($("environment").value === "live" && $("tableTexture").value === "loosePassive") size += 1;
-    size = Math.min(size, stack);
+    if (vpip.loose || vpip.veryLoose) size += vpip.veryLoose ? 1 : 0.5;
+    if (profileCallsTooMuch(profile)) size += 0.5;
+    size = Math.min(Math.max(1, size + profileSizeBias(profile)), stack);
     const strong = premium(label) || pairAtLeast(hand,"9") || ["ATs","AJs","AQs","AKs","AJo","AQo","AKo","KJs","KQs","KQo","QJs"].includes(label);
     const playable = late(state.heroPosition) && (["A8s","A9s","KTs","QTs","JTs","T9s"].includes(label) || hand.pair && hand.high >= rankValue("5"));
     const canOverlimp = speculative(hand) && stack >= 80 && (!oop || state.heroPosition === "BB");
-    if (strong || playable && profile !== "nit") return recommendationBase("RAISE", "raise", `Isolate with ${label}`, "Your hand is strong enough to build a pot against ranges that entered passively.", size, strong ? "High" : "Medium", {}, [
+    if (strong || playable && !profileIsNit(profile)) return recommendationBase("RAISE", "raise", `Isolate with ${label}`, "Your hand is strong enough to build a pot against ranges that entered passively.", size, strong ? "High" : "Medium", {}, [
       "Limping ranges are generally weaker than opening ranges.",
       `The size accounts for ${limpers} limper${limpers > 1 ? "s" : ""}${oop ? " and your positional disadvantage" : ""}.`,
-      selectedReads().has("callsTooMuch") ? "The observed calling tendency supports a larger, value-heavy raise." : "The raise can win immediately or create a pot where you hold the stronger range."
-    ], ["Overlimping lets weaker hands realize equity cheaply.", "A tiny raise is likely to create a large multiway pot."], "If several players call, one pair becomes less valuable. Do not confuse a large preflop pot with an obligation to stack off.", postflopPlan(hand,label), "Raise strong and playable value hands over limpers.", profile === "callingStation" || selectedReads().has("callsTooMuch") ? "Size up for value and reduce bluff isolation raises." : "Use normal isolation pressure.");
+      profileCallsTooMuch(profile) ? "The observed calling tendency supports a larger, value-heavy raise." : vpip.loose || vpip.veryLoose ? `The table average VPIP is ${vpip.average.toFixed(0)}%, so the isolation raise leans more value-heavy.` : "The raise can win immediately or create a pot where you hold the stronger range."
+    ], ["Overlimping lets weaker hands realize equity cheaply.", "A tiny raise is likely to create a large multiway pot."], "If several players call, one pair becomes less valuable. Do not confuse a large preflop pot with an obligation to stack off.", postflopPlan(hand,label), "Raise strong and playable value hands over limpers.", profileCallsTooMuch(profile) ? "Size up for value and reduce bluff isolation raises." : "Use normal isolation pressure.");
     if (state.heroPosition === "BB") return recommendationBase("CHECK", "call", `Check ${label}`, "You can see the flop without investing another chip.", 0, "High", {}, [
       "The big blind already has the option to check after limpers.",
       canOverlimp ? "The hand has enough speculative value to take a free flop." : "Even a weak hand should take the free option rather than fold.",
@@ -773,18 +1477,21 @@
     const seat = normalizedPosition(position);
     if (position === "BTN/SB" || seat === "BTN" || seat === "CO" || seat === "SB") return 0;
     if (seat === "HJ" || seat === "LJ" || seat === "MP") return 1;
-    if (seat === "UTG" || seat === "UTG+1") return 2;
+    if (seat === "UTG" || seat === "UTG+1" || seat === "UTG+2") return 2;
     return 1;
   }
 
   function applyProfileStrength(score, profile) {
-    if (profile === "nit") score += 2;
-    if (profile === "standard") score += 0;
-    if (profile === "loose") score -= 1;
-    if (profile === "callingStation") score += 1;
-    if (profile === "wild") score -= 2;
-    if (selectedReads().has("jamsWide") || selectedReads().has("bluffsTooMuch")) score -= 1;
-    if (selectedReads().has("underbluffs")) score += 1;
+    const profileKey = baseProfile(profile);
+    const reads = selectedReads(profile);
+    if (profileKey === "nit") score += 2;
+    if (profileKey === "standard") score += 0;
+    if (profileKey === "loose") score -= 1;
+    if (profileKey === "callingStation") score += 1;
+    if (profileKey === "wild") score -= 2;
+    score += profileStrengthBias(profile);
+    if (reads.has("jamsWide") || reads.has("bluffsTooMuch")) score -= 1;
+    if (reads.has("underbluffs")) score += 1;
     return clamp(score, -2, 4);
   }
 
@@ -800,7 +1507,7 @@
     const blindBattle = threeBettor === "BB" && (opener === "SB" || openerPosition === "BTN/SB");
     if (blindVsSteal) score -= 1;
     if (blindBattle) score -= 1;
-    if (["BTN","CO"].includes(threeBettor) && ["HJ","CO"].includes(opener)) score -= 0.5;
+    if (["BTN","CO"].includes(threeBettor) && ["HJ","CO"].includes(opener)) score -= 1;
     return applyProfileStrength(score, profile);
   }
 
@@ -852,7 +1559,9 @@
     const callers = state.scenario === "openCallers" ? clamp(Number($("callerCount").value || 1),1,8) : 0;
     const stack = validNumber($("effectiveStack").value, 100);
     const ip = inPosition(state.heroPosition, opener);
-    const strength = openingRangeStrength(opener, profile);
+    const vpip = tableVpipContext();
+    const tableSticky = tableVpipCallsTooMuch();
+    const strength = clamp(openingRangeStrength(opener, profile) + tableVpipStrengthBias(profile), -2, 4);
     const bigOpen = openSize >= 5 || openSize / stack >= .08;
     const callCost = callCostTo(openSize);
     const callerBets = Array.from({ length: callers }, () => ({ position: null, totalBetBB: openSize }));
@@ -861,21 +1570,22 @@
     let valueSet = THREEBET_NORMAL;
     if (strength >= 3) valueSet = THREEBET_TIGHT;
     if (strength <= 0) valueSet = THREEBET_WIDE;
-    if (strength <= -1 || selectedReads().has("jamsWide")) valueSet = THREEBET_VERY_WIDE;
+    if (strength <= -1 || selectedReads(profile).has("jamsWide")) valueSet = THREEBET_VERY_WIDE;
     const value3bet = valueSet.has(label);
     const stealOpener = openingRangeScore(opener) <= 0;
     const blindResteal = state.heroPosition === "BB" && stealOpener;
     const smallBlindResteal = state.heroPosition === "SB" && stealOpener;
     const restealBluffSet = smallBlindResteal ? SB_STEAL_3BET : LIGHT_3BET;
-    const bluff3bet = restealBluffSet.has(label) && strength <= 1 && openSize <= 3.5 && callers === 0 && (ip || smallBlindResteal || blindResteal) && profile !== "callingStation" && !selectedReads().has("callsTooMuch");
+    const bluff3bet = restealBluffSet.has(label) && strength <= 1 && openSize <= 3.5 && callers === 0 && (ip || smallBlindResteal || blindResteal) && !profileCallsTooMuch(profile) && !tableSticky;
     let callSet = strength >= 3 ? CALL_TIGHT : strength <= 0 ? CALL_WIDE : CALL_NORMAL;
     let canCall = callSet.has(label);
     if (!bigOpen && facingOpenCallExtras(opener, openSize, ip, callers).has(label)) canCall = true;
+    if (!bigOpen && state.heroPosition === "BB" && potOdds <= 25 && BB_GOOD_PRICE_DEFEND.has(label)) canCall = true;
     if (!ip && state.heroPosition !== "BB" && !premium(label)) canCall = canCall && !dominatedOffsuit(label);
     if (bigOpen && !premium(label)) canCall = canCall && (pairAtLeast(hand,"T") || ["AQs","AKs","AQo","AKo","KQs"].includes(label));
     if (callers > 0 && speculative(hand) && stack >= 100 && ip && !dominatedOffsuit(label)) canCall = true;
-    const multiplier = ip ? 3 : 4;
-    const threeBetSize = Math.min(stack, openSize * multiplier + callers * openSize);
+    const multiplier = (ip ? 3 : 4) + (profileCallsTooMuch(profile) || tableSticky ? 0.25 : 0);
+    const threeBetSize = Math.min(stack, Math.max(openSize + 0.5, openSize * multiplier + callers * openSize + profileSizeBias(profile)));
     const plan = postflopPlan(hand,label);
 
     if (value3bet || bluff3bet) {
@@ -885,20 +1595,20 @@
         isBluff ? "The hand has useful blockers and retains equity when called." : "Worse hands can continue against this range and player profile.",
         `${ip ? "Position" : "Being out of position"} supports a ${multiplier}x base multiplier.`,
         callers ? `The size increases because ${callers} caller${callers > 1 ? "s" : ""} added dead money.` : "A larger raise denies equity and avoids inviting the field in."
-      ], [isBluff ? "Fold if the opener is tight, oversized, or likely to call every 3-bet." : "Calling may under-realize value and invite players behind.", "Do not use a tiny 3-bet that gives everyone an easy price."], "A 3-bet creates a larger pot, but it does not commit the entire stack. Reevaluate a 4-bet using its range and price.", plan, isBluff ? "Use selected blocker hands as low-frequency 3-bets." : "3-bet for value.", profile === "callingStation" || selectedReads().has("callsTooMuch") ? "Remove bluff 3-bets and widen only the value side." : "The selected profile supports the displayed range.");
+      ], [isBluff ? "Fold if the opener is tight, oversized, or likely to call every 3-bet." : "Calling may under-realize value and invite players behind.", "Do not use a tiny 3-bet that gives everyone an easy price."], "A 3-bet creates a larger pot, but it does not commit the entire stack. Reevaluate a 4-bet using its range and price.", plan, isBluff ? "Use selected blocker hands as low-frequency 3-bets." : "3-bet for value.", profileCallsTooMuch(profile) || tableSticky ? "Remove bluff 3-bets and widen only the value side against sticky callers." : vpip.tight ? "Low average VPIP lets selected resteals rely more on fold equity." : "The selected profile supports the displayed range.");
     }
 
     if (canCall) return recommendationBase("CALL", "call", `Call with ${label}`, "The hand has enough equity and playability to continue without inflating the pot.", callCost, confidenceFor(bigOpen || !ip, true), { potOdds }, [
       `You need roughly ${potOdds.toFixed(1)}% equity before accounting for future betting.`,
       ip ? "Position improves equity realization after the flop." : state.heroPosition === "BB" ? "The big blind's discount supports a wider defense." : "The call is acceptable, but out-of-position realization lowers confidence.",
       callers ? "The extra callers improve immediate price but reduce the value of one-pair hands." : "Calling keeps weaker opens and bluffs in the opponent's range."
-    ], ["3-bet hands that gain more from fold equity or value isolation.", "Fold hands that mainly make dominated top pairs."], "Call because the current price and range justify it, not because folding feels like surrendering the blind.", plan, "Continue by calling.", selectedReads().has("overvaluesPairs") && hand.pair ? "Set value improves, but do not pay any price merely to flop a set." : "No major adjustment without a stronger read.");
+    ], ["3-bet hands that gain more from fold equity or value isolation.", "Fold hands that mainly make dominated top pairs."], "Call because the current price and range justify it, not because folding feels like surrendering the blind.", plan, "Continue by calling.", selectedReads(profile).has("overvaluesPairs") && hand.pair ? "Set value improves, but do not pay any price merely to flop a set." : "No major adjustment without a stronger read.");
 
     return recommendationBase("FOLD", "fold", `Fold ${label} to the open`, "The hand lacks enough strength, position, or nut potential for this price.", 0, "High", { potOdds }, [
       bigOpen ? "The larger open worsens your price and lowers implied odds." : "The hand remains outside the default continuing range.",
       dominatedOffsuit(label) ? "It frequently makes an expensive second-best top pair." : "It does not realize enough equity against the selected range.",
       strength >= 2 ? "The opener's position or profile indicates a strong range." : "Even a wide opener does not make every hand a profitable defense."
-    ], ["Continue wider in the big blind against small late-position opens.", "3-bet selected blockers rather than flatting weak dominated hands."], "The chips already posted as a blind are sunk. Compare the additional call with the pot and range.", plan, "Fold.", profile === "wild" ? "A proven wild opponent can widen value continues, but evidence should come before hero calls." : "Respect the selected range until you observe a clear deviation.");
+    ], ["Continue wider in the big blind against small late-position opens.", "3-bet selected blockers rather than flatting weak dominated hands."], "The chips already posted as a blind are sunk. Compare the additional call with the pot and range.", plan, "Fold.", profileIsWild(profile) ? "A proven wild opponent can widen value continues, but evidence should come before hero calls." : "Respect the selected range until you observe a clear deviation.");
   }
 
   function facingThreeBetRecommendation(hand,label) {
@@ -908,20 +1618,22 @@
     const threeBet = validNumber($("aggressorSize").value, 10);
     const stack = validNumber($("effectiveStack").value, 100);
     const ip = inPosition(state.heroPosition, villain);
-    const strength = threeBetRangeStrength(villain, profile, state.heroPosition);
+    const vpip = tableVpipContext();
+    const tableBias = vpip.tight ? 1 : vpip.veryLoose && ["unknown","standard"].includes(baseProfile(profile)) ? -0.5 : 0;
+    const strength = clamp(threeBetRangeStrength(villain, profile, state.heroPosition) + tableBias, -2, 4);
     const callCost = callCostTo(threeBet, open);
     const potBefore = potWithBets([{ position: state.heroPosition, totalBetBB: open }, { position: villain, totalBetBB: threeBet }]);
     const potOdds = potOddsPercent(callCost, potBefore);
     const sizePressure = threeBet / stack;
     const naturallyWide = strength <= 0;
-    const exploitAggressive = profile === "wild" || selectedReads().has("jamsWide") || selectedReads().has("bluffsTooMuch");
+    const exploitAggressive = profileIsWild(profile);
     const wideRange = naturallyWide || exploitAggressive;
     const value4bet = ["AA","KK"].includes(label) || (strength <= 1 && ["QQ","AKs","AKo"].includes(label)) || (exploitAggressive && ["JJ","AQs"].includes(label));
-    const bluff4bet = !value4bet && LIGHT_4BET.has(label) && naturallyWide && open <= 3 && sizePressure < .22 && profile !== "callingStation" && !selectedReads().has("callsTooMuch");
+    const bluff4bet = !value4bet && LIGHT_4BET.has(label) && naturallyWide && open <= 3 && sizePressure < .22 && !profileCallsTooMuch(profile) && !tableVpipCallsTooMuch();
     let callStrong = threeBetCallSet(strength, ip, stack).has(label);
     if (!ip && !premium(label) && dominatedOffsuit(label)) callStrong = false;
     const plan = postflopPlan(hand,label);
-    const fourBetSize = sizePressure >= .25 ? stack : Math.min(stack, threeBet * (ip ? 2.2 : 2.4));
+    const fourBetSize = sizePressure >= .25 ? stack : Math.min(stack, Math.max(threeBet + 1, threeBet * (ip ? 2.2 : 2.4) + profileSizeBias(profile)));
 
     if (value4bet || bluff4bet) {
       const isBluff = bluff4bet && !value4bet;
@@ -936,7 +1648,7 @@
       `The immediate call requires about ${potOdds.toFixed(1)}% equity.`,
       ip ? "Position supports calling and preserving the opponent's bluffs." : "Out-of-position play makes the defense more difficult, so the range stays tighter.",
       "The 3-bet size is not so large that continuing automatically commits the stack."
-    ], ["4-bet the top of the range for value.", "Fold dominated or speculative opens that cannot realize equity in a low-SPR pot."], "Your original open is sunk. The only question is whether the new call is profitable against the current range and size.", plan, "Call selected strong hands.", profile === "nit" || selectedReads().has("underbluffs") ? "Fold the bottom of this calling range against underbluffed 3-bets." : wideRange ? "Late-position and blind-resteal nodes justify defending more hands than early-position 3-bets." : "No large deviation is needed.");
+    ], ["4-bet the top of the range for value.", "Fold dominated or speculative opens that cannot realize equity in a low-SPR pot."], "Your original open is sunk. The only question is whether the new call is profitable against the current range and size.", plan, "Call selected strong hands.", profileIsNit(profile) || profileUnderbluffs(profile) || vpip.tight ? "Fold the bottom of this calling range against underbluffed or low-VPIP 3-bet pressure." : wideRange ? "Late-position and blind-resteal nodes justify defending more hands than early-position 3-bets." : "No large deviation is needed.");
 
     return recommendationBase("FOLD", "fold", `Release ${label} to the 3-bet`, "The hand is not strong enough to continue in a large pot against the selected range and sizing.", 0, "High", { potOdds }, [
       "Opening a hand does not obligate you to defend it.",
@@ -954,16 +1666,18 @@
     const callCost = callCostTo(fourBet, heroThreeBet);
     const potBefore = potWithBets([{ position: state.heroPosition, totalBetBB: heroThreeBet }, { position: villain, totalBetBB: fourBet }]);
     const potOdds = potOddsPercent(callCost, potBefore);
-    const strength = fourBetRangeStrength(villain, profile);
-    const exploitWide = profile === "wild" || selectedReads().has("jamsWide") || selectedReads().has("bluffsTooMuch");
+    const vpip = tableVpipContext();
+    const tableBias = vpip.tight ? 1 : vpip.veryLoose && ["unknown","standard"].includes(baseProfile(profile)) ? -0.5 : 0;
+    const strength = clamp(fourBetRangeStrength(villain, profile) + tableBias, -2, 4);
+    const exploitWide = profileIsWild(profile);
     const stackOffWide = strength <= 0 || exploitWide;
     const callWide = strength <= 1 || exploitWide;
     const premiumStack = ["AA","KK"].includes(label) || (stackOffWide && ["QQ","AKs","AKo"].includes(label));
-    const cautiousCall = ["QQ","AKs","AKo"].includes(label) && fourBet / stack < .28 && callWide && profile !== "nit" && !selectedReads().has("underbluffs");
+    const cautiousCall = ["QQ","AKs","AKo"].includes(label) && fourBet / stack < .28 && callWide && !profileIsNit(profile) && !profileUnderbluffs(profile) && !vpip.tight;
     const plan = postflopPlan(hand,label);
     if (premiumStack) return recommendationBase("ALL-IN", "raise", `Continue for stacks with ${label}`, "The hand is strong enough against the selected 4-betting range.", stack, "High", { potOdds }, ["The hand sits at the top of your 3-betting range.", stackOffWide ? exploitWide ? "The selected read or profile says this opponent can 4-bet too wide." : `${villain} starts from a very wide steal range, so this 4-bet is not as narrow as an early-position 4-bet.` : "AA and KK remain clear value continues against normal ranges.", "Calling often leaves too little stack behind to improve the decision."], ["Do not slow-play if a call would create an awkward tiny stack-to-pot ratio."], "This is a range-based stack-off, not a decision caused by the chips already invested.", plan, "Jam for value.", stackOffWide ? "Widen carefully to QQ and AK only when position, size, or reads support it." : "Keep the range premium.");
     if (cautiousCall) return recommendationBase("CALL", "call", `Call the 4-bet with ${label}`, "The size and profile allow a controlled continue, especially when position helps.", callCost, "Medium", { potOdds }, [`The direct price is about ${potOdds.toFixed(1)}%.`, "The hand retains strong equity against a non-nit range.", "The remaining stack still allows a postflop decision."], ["Fold against a tight, underbluffed 4-bettor.", "Jam instead when the stack is already shallow."], "Do not call because the pot looks too large to abandon. Call only if the range and remaining stack support it.", plan, "Continue selectively.", "This recommendation is highly opponent-dependent.");
-    return recommendationBase("FOLD", "fold", `Fold ${label} to the 4-bet`, "At most stakes, unknown 4-bets are value-heavy enough that marginal continues lose money.", 0, "High", { potOdds }, ["The 4-betting range is usually much stronger than the opening or 3-betting range.", "The remaining decision involves the whole stack, not just the amount already invested.", selectedReads().has("underbluffs") ? "Your underbluff read makes the fold even clearer." : `Without evidence that ${villain} is too wide, default to discipline.`], ["Continue wider only against a proven wide 4-bettor.", "AA and KK remain standard stack-offs."], "The chips in your 3-bet are sunk. Saving the rest is a profitable outcome when the range is crushed.", plan, "Fold.", "Avoid hero calls based only on unusual hands you have seen other players show.");
+    return recommendationBase("FOLD", "fold", `Fold ${label} to the 4-bet`, "At most stakes, unknown 4-bets are value-heavy enough that marginal continues lose money.", 0, "High", { potOdds }, ["The 4-betting range is usually much stronger than the opening or 3-betting range.", "The remaining decision involves the whole stack, not just the amount already invested.", profileUnderbluffs(profile) ? "Your underbluff read makes the fold even clearer." : `Without evidence that ${villain} is too wide, default to discipline.`], ["Continue wider only against a proven wide 4-bettor.", "AA and KK remain standard stack-offs."], "The chips in your 3-bet are sunk. Saving the rest is a profitable outcome when the range is crushed.", plan, "Fold.", "Avoid hero calls based only on unusual hands you have seen other players show.");
   }
 
   function buildRecommendation() {
@@ -998,7 +1712,10 @@
       ? [`${result.metrics.potOdds.toFixed(1)}% Price`, "Future betting and position still matter more than the raw pot odds."]
       : [`${stack} BB Stack`, stack < 40 ? "Lower stack depth makes dominated calls and speculative flats less forgiving." : "There is enough depth to prioritize range quality and postflop control."];
     const hasPlayersBehind = preflopIndex(state.heroPosition) < positionLayout().length - 1 && !["threeBet","fourBet"].includes(state.scenario);
-    const table = state.scenario === "unopened"
+    const vpip = tableVpipContext();
+    const table = vpip.average != null
+      ? [`${vpip.average.toFixed(0)}% VPIP`, vpip.loose || vpip.veryLoose ? "Expect more calls, size value hands cleanly, and trim low-equity steals." : vpip.tight ? "Fold equity improves, but keep the widening selective and position-aware." : "The entered VPIP average supports the baseline without a major table-wide deviation."]
+      : state.scenario === "unopened"
       ? [`${remaining} Behind`, remaining >= 5 ? "Many players still act, so dominated hands need extra discipline." : "Late position lowers pressure, but weak opens still need a clear reason."]
       : $("tableTexture").value === "loosePassive"
       ? ["Value Lean", "Size up thinner for value and reduce low-equity bluffs."]
@@ -1124,7 +1841,7 @@
     return {
       heroCards: hero.cards,
       boardCards: board.cards,
-      profile: $("postflopProfile").value,
+      profile: postflopProfileFor($("postflopProfile").value),
       position: $("postflopPosition").value,
       initiative: $("postflopInitiative").value,
       iterations: Number($("postflopIterations").value || 15000),
@@ -1271,7 +1988,7 @@
       if (!item) return;
       $("playerCount").value = item.players;
       state.playerCount = item.players;
-      state.heroPosition = item.position;
+      setHeroPosition(item.position, { snap: true });
       state.scenario = item.scenario;
       state.cards = item.cards.map(parseCardCode);
       switchView("coach");
@@ -1281,7 +1998,7 @@
   }
 
   function setCoachSpot(spot) {
-    state.heroPosition = spot.position;
+    setHeroPosition(spot.position, { snap: true });
     state.scenario = spot.scenario;
     state.cards = representativeCards(spot.label);
   }
@@ -1296,7 +2013,7 @@
     renderAllCore();
     const result = buildRecommendation();
     if (!shouldSync) {
-      state.heroPosition = previous.heroPosition;
+      setHeroPosition(previous.heroPosition, { snap: true });
       state.scenario = previous.scenario;
       state.cards = previous.cards;
       renderAllCore();
@@ -1536,6 +2253,10 @@
     const data = {
       playerCount: state.playerCount,
       heroPosition: state.heroPosition,
+      heroSeatIndex: state.heroSeatIndex,
+      buttonSeatIndex: state.buttonSeatIndex,
+      seatWheelRotation: state.seatWheelRotation,
+      vpipBySeat: state.vpipBySeat,
       currency: $("currency").value,
       smallBlind: $("smallBlind").value,
       bigBlind: $("bigBlind").value,
@@ -1550,12 +2271,18 @@
   }
 
   function loadPreferences() {
+    state.customStyles = readCustomStyles();
     try {
       const data = JSON.parse(storageGet("preflopStudioPreferences", "null"));
       if (!data) return;
       ["currency","smallBlind","bigBlind","effectiveStack","environment","tableTexture","playersBehind","blindTendency"].forEach((key) => { if (data[key] != null && $(key)) $(key).value = data[key]; });
       if (data.playerCount && POSITION_LAYOUTS[data.playerCount]) { state.playerCount = Number(data.playerCount); $("playerCount").value = String(data.playerCount); }
-      if (data.heroPosition && POSITION_LAYOUTS[state.playerCount].includes(data.heroPosition)) state.heroPosition = data.heroPosition;
+      if (data.buttonSeatIndex != null) state.buttonSeatIndex = Number(data.buttonSeatIndex);
+      if (data.heroSeatIndex != null) state.heroSeatIndex = Number(data.heroSeatIndex);
+      if (data.seatWheelRotation != null && Number.isFinite(Number(data.seatWheelRotation))) state.seatWheelRotation = Number(data.seatWheelRotation);
+      if (data.vpipBySeat) state.vpipBySeat = sanitizeVpipMap(data.vpipBySeat);
+      if (data.heroPosition && data.heroSeatIndex == null && POSITION_LAYOUTS[state.playerCount].includes(data.heroPosition)) state.heroPosition = data.heroPosition;
+      ensureSeatState({ preferPosition: data.heroSeatIndex == null });
       if (data.theme) document.documentElement.dataset.theme = data.theme;
     } catch { /* ignore malformed local data */ }
   }
@@ -1563,21 +2290,31 @@
   function resetSpot() {
     state.playerCount = 9;
     state.heroPosition = "BTN";
+    state.heroSeatIndex = 0;
+    state.buttonSeatIndex = 0;
+    state.seatWheelRotation = seatWheelRotationForSeat(0);
+    state.vpipBySeat = {};
+    state.vpipEditorSeat = null;
     state.scenario = "unopened";
     state.cards = [null,null];
     state.readTags.clear();
+    state.editingCustomStyleId = "";
     $("playerCount").value = "9";
     $("currency").value = "$";
     $("smallBlind").value = "1";
     $("bigBlind").value = "2";
     $("effectiveStack").value = "100";
     document.querySelectorAll(".read-tag").forEach((button) => button.classList.remove("active"));
+    closeVpipPopover();
+    loadCustomStyleEditor();
+    renderCustomStyleList();
     renderResultEmpty();
     renderAllCore();
   }
 
   function renderAllCore() {
     state.playerCount = Number($("playerCount").value);
+    ensureSeatState({ preferPosition: positionLayout().includes(state.heroPosition) && seatPositionLabel(state.heroSeatIndex) !== state.heroPosition });
     ensureAllowedScenario();
     renderDynamicFields();
     renderSeats();
@@ -1600,7 +2337,21 @@
       document.documentElement.dataset.theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
       savePreferences();
     });
-    $("playerCount").addEventListener("change", () => { state.playerCount = Number($("playerCount").value); const layout = positionLayout(); if (!layout.includes(state.heroPosition)) state.heroPosition = layout.includes("BTN") ? "BTN" : layout[0]; renderAllCore(); });
+    $("playerCount").addEventListener("change", () => {
+      state.playerCount = Number($("playerCount").value);
+      const layout = positionLayout();
+      if (!layout.includes(state.heroPosition)) setHeroPosition(layout.includes("BTN") ? "BTN" : layout[0], { snap: true });
+      else ensureSeatState({ preferPosition: true });
+      renderAllCore();
+    });
+    const tableStage = $("tableStage");
+    tableStage.addEventListener("pointerdown", beginSeatWheelDrag);
+    tableStage.addEventListener("pointermove", updateSeatWheelDrag);
+    tableStage.addEventListener("pointerup", finishSeatWheelDrag);
+    tableStage.addEventListener("pointercancel", finishSeatWheelDrag);
+    tableStage.addEventListener("keydown", handleSeatWheelKey);
+    $("rotateSeatLeftBtn").addEventListener("click", () => rotateSeatWheel(-1));
+    $("rotateSeatRightBtn").addEventListener("click", () => rotateSeatWheel(1));
     ["currency","smallBlind","bigBlind","effectiveStack"].forEach((id) => $(id).addEventListener("input", () => { renderStatus(); savePreferences(); renderSessionAdvisor(); autoAnalyze(); }));
     ["environment","tableTexture","playersBehind","blindTendency"].forEach((id) => $(id).addEventListener("change", () => { renderDynamicFields(); savePreferences(); autoAnalyze(); }));
     document.querySelectorAll("#scenarioSegments .segment").forEach((button) => button.addEventListener("click", () => { if (!scenarioAllowed(button.dataset.scenario)) return; state.scenario = button.dataset.scenario; renderDynamicFields(); scenarioButtonUpdate(); renderSeats(); autoAnalyze(); }));
@@ -1629,6 +2380,23 @@
       button.classList.toggle("active", state.readTags.has(key));
       autoAnalyze();
     });
+    $("newCustomStyleBtn").addEventListener("click", () => {
+      loadCustomStyleEditor();
+      renderCustomStyleList();
+    });
+    $("saveCustomStyleBtn").addEventListener("click", saveCustomStyle);
+    $("deleteCustomStyleBtn").addEventListener("click", deleteCustomStyle);
+    $("customStyleList").addEventListener("click", (event) => {
+      const button = event.target.closest(".custom-style-item");
+      if (!button) return;
+      const style = state.customStyles.find((item) => item.id === button.dataset.styleId);
+      if (!style) return;
+      loadCustomStyleEditor(style);
+      renderCustomStyleList();
+      const profileValue = customProfileValue(style.id);
+      if ($("opponentProfile") && Array.from($("opponentProfile").options).some((option) => option.value === profileValue)) $("opponentProfile").value = profileValue;
+      autoAnalyze();
+    });
     $("coachForm").addEventListener("submit", (event) => {
       event.preventDefault();
       try {
@@ -1655,11 +2423,12 @@
   loadPreferences();
   bindEvents();
   renderAllCore();
+  renderCustomStyles();
   renderDrillSpot();
   renderTax();
   renderSessionAdvisor();
   analyzePostflop();
   renderHistory();
 
-  window.PreflopStudio = { state, model, holdem, reviewTools, OPEN, FRINGE, HU_OPEN, openingSet, openingRangeStrength, threeBetRangeStrength, fourBetRangeStrength, buildRecommendation, validateBettingContext, autoAnalyze, advisorNotes, parseHandEntry, parseReviewLine, analyzePostflop, newDrillHand, answerDrill, analyzeReviewHands, renderRangeLab, renderSessionAdvisor };
+  window.PreflopStudio = { state, model, holdem, reviewTools, OPEN, FRINGE, HU_OPEN, openingSet, openingRangeStrength, threeBetRangeStrength, fourBetRangeStrength, buildRecommendation, validateBettingContext, autoAnalyze, advisorNotes, parseHandEntry, parseReviewLine, analyzePostflop, newDrillHand, answerDrill, analyzeReviewHands, renderRangeLab, renderSessionAdvisor, positionOrderForCount, seatPositionLabel, seatIndexForPosition, seatWheelRotationForSeat, nearestSeatIndexForRotation, setHeroSeatIndex, setHeroPosition, selectSeatFromWheel, rotateSeatWheel, handleSeatWheelKey, openSeatVpipEditor, validateVpipValue, setSeatVpip, seatVpip, averageOpponentVpip, tableVpipContext };
 })();

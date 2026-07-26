@@ -40,6 +40,8 @@ The current suite guards:
 - Suited, offsuit, pair, and exact-card parsing.
 - Big blind scenario legality.
 - Valid blind-defense spot validation.
+- Rotatable physical-seat wheel mapping, snapping, wraparound, click selection, keyboard selection, and VPIP validation.
+- Physical-seat VPIP storage that remains attached to the same seat after rotation.
 - Review-note parsing for `unopened`, `facing open`, and illegal BB unopened spots.
 - Hold'em 5-7 card hand evaluation.
 - River equity against a range.
@@ -49,10 +51,12 @@ The current suite guards:
 
 - Instant preflop advisor for 2-10 handed NLH spots.
 - Text hand entry such as `KQ`, `KQo`, `KQs`, `TT`, or exact cards like `AsKh`.
-- Interactive table seat selection.
+- Rotatable table seat wheel with a fixed hero selector, dealer marker, drag/button/click selection, keyboard controls, normal page scrolling, and per-opponent VPIP entry.
 - Scenario controls for unopened pots, limpers, opens, open plus callers, 3-bets, and 4-bets.
 - Advisor snapshot with action focus, price check, table fit, and hand plan.
+- Average opponent VPIP adjustments for steal pressure, sticky-table sizing, and close preflop decisions.
 - Range Lab with simplified position-opening matrices.
+- Saved custom player styles for opponent tightness, calling tendency, aggression, sizing bias, and postflop range assumptions.
 - Postflop advisor with exact-card board input, real showdown equity estimates, pot odds, MDF guide, board texture, draw detection, and plain-English recommendations.
 - Practice Drills with random spot generation, answer scoring, session accuracy, streak, and drill history.
 - Tools for blind tax, bankroll/session guardrails, recent recommendations, and simple hand-note review.
