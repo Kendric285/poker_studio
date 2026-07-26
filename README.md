@@ -41,7 +41,7 @@ The current suite guards:
 - Big blind scenario legality.
 - Valid blind-defense spot validation.
 - Rotatable physical-seat wheel mapping, snapping, wraparound, click selection, keyboard selection, and VPIP validation.
-- Physical-seat VPIP storage that remains attached to the same seat after rotation.
+- Chair/player VPIP storage that stays visually attached to the same player while action labels rotate.
 - Review-note parsing for `unopened`, `facing open`, and illegal BB unopened spots.
 - Hold'em 5-7 card hand evaluation.
 - River equity against a range.
@@ -51,7 +51,7 @@ The current suite guards:
 
 - Instant preflop advisor for 2-10 handed NLH spots.
 - Text hand entry such as `KQ`, `KQo`, `KQs`, `TT`, or exact cards like `AsKh`.
-- Rotatable table seat wheel with a fixed hero selector, dealer marker, drag/button/click selection, keyboard controls, normal page scrolling, and per-opponent VPIP entry.
+- Rotatable table seat wheel with a fixed hero selector, dealer marker, drag/button/click selection, keyboard controls, normal page scrolling, and per-opponent VPIP entry that stays with each chair/player.
 - Scenario controls for unopened pots, limpers, opens, open plus callers, 3-bets, and 4-bets.
 - Advisor snapshot with action focus, price check, table fit, and hand plan.
 - Average opponent VPIP adjustments for steal pressure, sticky-table sizing, and close preflop decisions.

@@ -480,6 +480,19 @@
     return parsed;
   }
 
+  function remapVpipForSeatRotation(delta, playerCount = state.playerCount) {
+    const count = activeSeatCount(playerCount);
+    const shift = Math.round(Number(delta) || 0);
+    if (!shift) return;
+    const next = {};
+    activeSeatIndexes(count).forEach((seatIndex) => {
+      const value = state.vpipBySeat[seatId(seatIndex)];
+      if (value == null) return;
+      next[seatId(positiveModulo(seatIndex + shift, count))] = value;
+    });
+    state.vpipBySeat = next;
+  }
+
   function averageOpponentVpip(playerCount = state.playerCount, heroSeatIndex = state.heroSeatIndex, vpipBySeat = state.vpipBySeat) {
     const count = activeSeatCount(playerCount);
     const hero = positiveModulo(Math.round(Number(heroSeatIndex) || 0), count);
@@ -537,7 +550,10 @@
 
   function setHeroSeatIndex(seatIndex, options = {}) {
     const count = activeSeatCount(options.playerCount || state.playerCount);
-    state.heroSeatIndex = positiveModulo(Math.round(Number(seatIndex) || 0), count);
+    const previousSeatIndex = positiveModulo(Math.round(Number(state.heroSeatIndex) || 0), count);
+    const nextSeatIndex = positiveModulo(Math.round(Number(seatIndex) || 0), count);
+    if (options.preserveVpipVisual !== false) remapVpipForSeatRotation(nextSeatIndex - previousSeatIndex, count);
+    state.heroSeatIndex = nextSeatIndex;
     state.heroPosition = seatPositionLabel(state.heroSeatIndex);
     state.vpipEditorSeat = state.vpipEditorSeat === state.heroSeatIndex ? null : state.vpipEditorSeat;
     if (options.snap !== false) state.seatWheelRotation = seatWheelRotationForSeat(state.heroSeatIndex);
