@@ -15,6 +15,71 @@ The app is designed as an educational decision aid rather than a solver. Its pre
 
 The baseline favors tight-aggressive fundamentals: raise first-in rather than limp, expand with position, value realized equity, and enter pressure lines with a response to the next raise already planned. Value 3-bets use a linear core. Polarized blocker 3-bets are presented as optional mixes when position and fold equity support them, not as mandatory actions.
 
+## Product Direction: Reference First
+
+The primary job of Preflop Studio is to answer a table-side study question quickly: **what is my baseline range and plan in this exact preflop node?** Practice should reinforce that reference rather than become a separate game.
+
+That suggests the following product hierarchy:
+
+1. **Range reference:** exact spot lookup with the assumptions shown beside the chart.
+2. **Decision explanation:** why a hand raises, calls, mixes, or folds and what changes the answer.
+3. **Targeted recall:** short drills generated from the same chart, weighted toward mistakes and close boundaries.
+4. **Review:** a compact leak report that links every miss back to the relevant range.
+5. **Postflop bridge:** a brief plan for the range that reaches the flop, not a replacement for a postflop solver.
+
+The default experience should therefore open quickly, remember the user's usual game, and require as few inputs as possible. Advanced controls can remain available for unusual spots, but the most common saved configuration should be one click away.
+
+## Recommended Update Roadmap
+
+This roadmap was reviewed against public poker-study guidance on 2026-07-27. It prioritizes reference accuracy and retrieval practice over adding more unrelated tools.
+
+### P0 — Make the reference trustworthy and fast
+
+- **Add saved game profiles.** A profile should capture cash/tournament, live/online, player count, stack depth, blind/ante/straddle structure, rake model, and default open sizes. Show the active profile and a concise assumptions badge above every range. Public charts are game-specific rather than universal, and cash-game rake and larger opens materially tighten calls and big-blind defenses.
+- **Turn Range Lab into an action-tree browser.** Use a breadcrumb such as `Cash 9-max · 100 BB · BTN opens 2.5 · Hero BB` and expose separate `fold / call / 3-bet` layers. Add back/forward navigation, keyboard search, and a shareable spot identifier. A composite position chart is helpful for orientation, but a reference tool should distinguish opener position, size, callers, hero position, and the next raise.
+- **Show frequencies without pretending to have solver precision.** Display combo counts and range percentages for pure actions. Label heuristic mixed actions as qualitative bands such as `mostly raise`, `mix`, or `mostly call` unless an imported source supplies actual weights.
+- **Make provenance visible in the UI.** Each chart should show its source type, version date, applicable configuration, and whether it is a bundled heuristic or a personal import. Add a visible warning whenever the selected spot falls outside the chart's calibrated assumptions.
+- **Add a compare drawer.** Let the user compare two adjacent contexts—such as BTN versus CO open, 2.5 BB versus 4 BB, or low-rake versus high-rake—and highlight only the hands that change. This teaches the underlying rule instead of encouraging memorization of an isolated grid.
+
+### P1 — Make practice produce durable recall
+
+- **Persist drill history by decision node and hand class.** Track attempts, misses, confidence, last-seen time, and recent accuracy locally. The existing session score disappears too quickly to diagnose a real leak.
+- **Add a mistake queue with spaced review.** Resurface missed and slow boundary hands after increasing intervals, while retaining some unseen and previously mastered spots. Retrieval practice and spacing have strong evidence for longer-term retention compared with passive rereading.
+- **Interleave related spots.** Mix BTN-versus-BB, CO-versus-BB, blind-versus-steal, and facing-3-bet decisions after the user learns them separately. Interleaving helps the player learn which contextual cue changes the action.
+- **Ask for the decision before revealing the grid.** Include a distraction-free mode with hidden ranges, immediate feedback after the answer, and an optional confidence rating. Feedback should show the correct branch, nearest boundary hands, and one short reason.
+- **Build drills from leaks, not just random hands.** Offer presets such as `Today's review`, `Blind defense`, `Facing 3-bets`, and `Range edges`. Weight by errors and practical frequency so folds do not dominate the session.
+
+### P2 — Cover the contexts that change preflop ranges
+
+- **Separate cash and tournament baselines.** Add antes and stack-depth buckets for tournaments, then treat ICM and bounty contexts as later, explicitly separate modes. Do not apply a chip-EV cash chart to an ICM decision.
+- **Model rake explicitly.** At minimum provide low, medium, and high-rake presets and explain that higher rake generally reduces marginal calls, especially from the blinds. A later version can accept percentage, cap, and no-flop-no-drop rules.
+- **Add straddled-pot profiles.** Recalculate effective depth in straddle units, identify the new first-to-act seat, and provide a deliberately tighter baseline. A straddle is not merely a larger big blind.
+- **Add squeeze and cold-4-bet nodes.** These are common reference lookups and need the opener, caller positions, sizes, and players behind. They should not be approximated by the current open-plus-callers branch forever.
+- **Treat heads-up and short-handed play as distinct configurations.** Avoid silently promoting a full-ring range when the positional structure and blind frequency have changed.
+
+### P3 — Turn review into a study plan
+
+- **Import real hand histories.** Parse common site formats into normalized preflop nodes and preserve the original line for inspection.
+- **Report leaks by opportunity as well as error count.** Useful metrics include RFI by position, fold/call/3-bet versus open, blind defense versus position and size, fold to 3-bet, and squeeze opportunities. Always show sample size; VPIP/PFR alone cannot support every exploit.
+- **Link every report cell back to reference and drill.** A user should be able to click `BB overfold versus BTN` and immediately see the comparison chart or start a focused drill.
+- **Add a weekly local-first study summary.** Recommend one or two high-volume leaks, not a long list. Keep raw hands and player notes on-device unless the user explicitly exports them.
+
+### Scope Guardrails
+
+- Keep all bundled outputs clearly labeled as educational heuristics until they are calibrated against a licensed or user-imported solution set.
+- Do not imply that a single chart is correct across different rake, sizing, stack, ante, straddle, or ICM assumptions.
+- Prefer a small number of stable action buckets over invented decimal frequencies.
+- Keep exploit advice separate from the baseline and state the read or statistic that triggers it.
+- Resist expanding the postflop advisor until the preflop reference can represent the full common action tree reliably.
+
+### Why These Priorities
+
+- Upswing's public chart library separates ranges by format, position, stack size, and raise size; its big-blind guidance also explains why cash-game rake and worse pot odds tighten defense: https://upswingpoker.com/charts/ and https://upswingpoker.com/big-blind-defend-strategy-mtt-vs-cash/
+- GTO Wizard's study documentation emphasizes viewing strategy, range composition, action breakdowns, and reports from a precisely selected game tree. Its training guidance recommends focusing practice on strategically related decisions and mixed preflop hands: https://help.gtowizard.com/study-mode/ and https://help.gtowizard.com/training-ideas/
+- Recent GTO Wizard analysis identifies two recurring population leaks—3-betting too tightly and playing too passively from the blinds—which supports giving those nodes first-class reference and drill coverage: https://blog.gtowizard.com/punish-the-unstudied-preflop-mistakes-sizing-tells/
+- Straddles change both effective stack depth and the number of blinds/players behind, so they deserve their own configuration rather than a sizing adjustment: https://upswingpoker.com/straddle-pots-tips/
+- Learning-science reviews support retrieval practice and spacing for durable retention, while classroom research also finds a benefit from interleaving retrieval across related concepts: https://doi.org/10.1038/s44159-022-00089-1 and https://pubmed.ncbi.nlm.nih.gov/35436145/
+
 ## Project Structure
 
 - `index.html` - convenience entry that redirects to the studio shell.
@@ -172,8 +237,10 @@ CO 77 vs 3-bet fold
 
 ## Next Good Upgrades
 
-- Add persistent drill-session history.
-- Add richer hand-history parsing for common poker site formats.
-- Add EV-estimate calibration tables per stack depth and rake environment.
-- Add board texture drills for postflop planning.
-- Add import/export for study plans and reviewed hands.
+The immediate implementation sequence from the roadmap is:
+
+1. Saved game profiles plus visible assumptions/provenance.
+2. Exact-node Range Lab navigation and context comparison.
+3. Persistent mistake history and a spaced `Today's review` queue.
+4. Rake-aware cash presets, tournament stack/ante presets, and straddled-pot profiles.
+5. Squeeze/cold-4-bet nodes and hand-history-driven leak reports.
