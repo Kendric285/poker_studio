@@ -1,6 +1,19 @@
 # Preflop Studio
 
-Preflop Studio is a static no-limit hold'em advisor for studying common preflop decisions, practicing quick drills, reviewing simple hand notes, and checking session guardrails.
+Preflop Studio is a local-first no-limit hold'em study app. Build a table spot, enter a hand, and get a position-aware recommendation with sizing, pot odds, opponent adjustments, range context, and a postflop plan. It also includes a visual Range Lab, practice drills, a lightweight hand-review analyzer, postflop equity tools, and session guardrails.
+
+The app is designed as an educational decision aid rather than a solver. Its preflop ranges are centralized, inspectable heuristics informed by public strategy references, so the chart, advisor, and drills share the same baseline instead of maintaining separate hand lists.
+
+## Study Workflow
+
+1. Choose the table size, stakes, effective stack, and hero position.
+2. Enter a hand using notation such as `A5s`, `KQo`, `TT`, or exact cards such as `AsKh`.
+3. Select the action before you: unopened, limpers, facing an open, open plus callers, facing a 3-bet, or facing a 4-bet.
+4. Add opponent reads or optional VPIP/PFR data when available.
+5. Review the recommended action, size, reasoning, exploit adjustment, commitment warning, and postflop plan.
+6. Open the same hand in Range Lab or practice related decisions in Drills.
+
+The baseline favors tight-aggressive fundamentals: raise first-in rather than limp, expand with position, value realized equity, and enter pressure lines with a response to the next raise already planned. Value 3-bets use a linear core. Polarized blocker 3-bets are presented as optional mixes when position and fold equity support them, not as mandatory actions.
 
 ## Project Structure
 
@@ -12,6 +25,7 @@ Preflop Studio is a static no-limit hold'em advisor for studying common preflop 
 - `src/review-parser.js` - tested parser for pasted hand-review notes.
 - `src/preflop-ranges.js` - centralized preflop range reference data, metadata, and public source attribution.
 - `src/preflop-ranges.personal.example.js` - optional private override template for personal/exported ranges.
+- `src/spades.png` - browser tab and saved-shortcut icon.
 - `src/app.js` - browser UI wiring, rendering, drill flow, preflop/postflop advisor output, and local persistence.
 - `tests/logic.test.js` - Node regression tests for production-critical logic.
 - `package.json` - local test command.
@@ -67,6 +81,19 @@ The current suite guards:
 - Practice Drills with random spot generation, answer scoring, session accuracy, streak, and drill history.
 - Tools for blind tax, bankroll/session guardrails, recent recommendations, and simple hand-note review.
 
+## Range Lab Colors
+
+For non-big-blind positions, a colored hand is first-in playable unless it is marked as a borderline exploit. Green is therefore the base opening color, while the stripe shows how that same hand can continue in a later branch:
+
+- Green fill: open first-in.
+- Blue stripe: opening hand with a call-versus-open branch.
+- Purple stripe: opening hand with a 3-bet branch.
+- Red stripe: opening hand with a 4-bet branch.
+- Amber: borderline exploit that depends more heavily on the table and opponent.
+- Uncolored: fold by default.
+
+The big blind uses a separate defense map because it cannot open first-in. Clicking a range cell loads a representative hand and the matching scenario into the advisor, allowing the chart recommendation and detailed explanation to be checked together.
+
 ## GTO Wizard-Inspired Feature Map
 
 This project does not copy GTO Wizard's proprietary solver outputs, solved ranges, EV data, UI, or paid database. The added features are local, heuristic equivalents inspired by public feature categories GTO Wizard advertises:
@@ -82,7 +109,7 @@ This project does not copy GTO Wizard's proprietary solver outputs, solved range
 
 The app loads preflop decisions from `src/preflop-ranges.js` before `src/app.js`. The file uses standard two-card labels such as `QQ`, `A5s`, and `KQo`, plus metadata for public references. The bundled ranges are simplified educational heuristics; they are not copied from paid or proprietary charts.
 
-The opening maps remain the first-in baseline. Separate range groups handle isolation raises, overlimps, position-aware 3-bets, calls versus opens, calls versus 3-bets, and good-price blind defenses. Every group is deduplicated by the range helpers and can be overridden independently.
+The opening maps remain the first-in baseline. Separate range groups handle isolation raises, soft-table overlimps, position-aware linear value 3-bets, optional polarized blocker 3-bets, calls versus opens, calls versus 3-bets, good-price blind defenses, and polarized 4-bet bluffs. Every group is deduplicated by the range helpers and can be overridden independently.
 
 To use a personal/exported chart source, copy `src/preflop-ranges.personal.example.js` to your own local file, fill in only the ranges you want to replace, and load it after `src/preflop-ranges.js` but before `src/app.js`. Arrays in `window.PreflopRangeOverrides` replace the matching bundled range, while omitted keys keep the baseline.
 
