@@ -55,80 +55,57 @@
   };
 
   const rankValue = (r) => ranksAsc.indexOf(r);
-  const pairsFrom = (minimum) => {
-    const start = rankValue(minimum);
-    return Array.from({ length: ranksAsc.length - start }, (_, i) => {
-      const r = ranksAsc[start + i]; return r + r;
-    });
-  };
-  const combosFrom = (high, minimumLow, suffix) => {
-    const out = [], hi = rankValue(high), lo = rankValue(minimumLow);
-    for (let i = lo; i < hi; i += 1) out.push(high + ranksAsc[i] + suffix);
-    return out;
-  };
   const setOf = (...items) => new Set(items.flat(Infinity));
-
-  const OPEN = {
-    "UTG": setOf(pairsFrom("5"), ["A2s","A3s","A4s","A5s"], combosFrom("A","9","s"), combosFrom("K","T","s"), combosFrom("Q","T","s"), ["JTs","T9s"], combosFrom("A","J","o"), ["KQo"]),
-    "UTG+1": setOf(pairsFrom("4"), ["A2s","A3s","A4s","A5s"], combosFrom("A","8","s"), combosFrom("K","T","s"), combosFrom("Q","T","s"), ["JTs","T9s"], combosFrom("A","J","o"), ["KQo"]),
-    "UTG+2": setOf(pairsFrom("4"), ["A2s","A3s","A4s","A5s"], combosFrom("A","8","s"), combosFrom("K","T","s"), combosFrom("Q","T","s"), ["JTs","T9s","98s"], combosFrom("A","J","o"), ["KQo"]),
-    "MP": setOf(pairsFrom("4"), ["A2s","A3s","A4s","A5s"], combosFrom("A","8","s"), combosFrom("K","9","s"), combosFrom("Q","T","s"), ["JTs","T9s","98s"], combosFrom("A","T","o"), combosFrom("K","J","o"), ["QJo"]),
-    "LJ": setOf(pairsFrom("3"), ["A2s","A3s","A4s","A5s"], combosFrom("A","7","s"), combosFrom("K","9","s"), combosFrom("Q","9","s"), combosFrom("J","9","s"), ["T9s","98s","87s","76s"], combosFrom("A","9","o"), combosFrom("K","T","o"), ["QJo","JTo"]),
-    "HJ": setOf(pairsFrom("2"), combosFrom("A","2","s"), combosFrom("K","8","s"), combosFrom("Q","9","s"), combosFrom("J","9","s"), combosFrom("T","8","s"), combosFrom("9","7","s"), combosFrom("8","6","s"), combosFrom("7","5","s"), ["65s","54s"], combosFrom("A","8","o"), combosFrom("K","T","o"), combosFrom("Q","T","o"), ["JTo"]),
-    "CO": setOf(pairsFrom("2"), combosFrom("A","2","s"), combosFrom("K","5","s"), combosFrom("Q","7","s"), combosFrom("J","7","s"), combosFrom("T","7","s"), combosFrom("9","6","s"), combosFrom("8","5","s"), combosFrom("7","4","s"), ["64s","65s","54s"], combosFrom("A","5","o"), combosFrom("K","9","o"), combosFrom("Q","9","o"), combosFrom("J","9","o"), ["T9o"]),
-    "BTN": setOf(pairsFrom("2"), combosFrom("A","2","s"), combosFrom("K","2","s"), combosFrom("Q","2","s"), combosFrom("J","4","s"), combosFrom("T","5","s"), combosFrom("9","5","s"), combosFrom("8","5","s"), combosFrom("7","4","s"), ["64s","65s","53s","54s","43s"], combosFrom("A","2","o"), combosFrom("K","7","o"), combosFrom("Q","8","o"), combosFrom("J","8","o"), combosFrom("T","8","o"), ["98o"]),
-    "SB": setOf(pairsFrom("2"), combosFrom("A","2","s"), combosFrom("K","4","s"), combosFrom("Q","6","s"), combosFrom("J","7","s"), combosFrom("T","7","s"), combosFrom("9","6","s"), combosFrom("8","5","s"), combosFrom("7","4","s"), ["64s","65s","54s"], combosFrom("A","5","o"), combosFrom("K","9","o"), combosFrom("Q","9","o"), combosFrom("J","9","o"), ["T9o"]),
-    "BB": new Set()
-  };
-
-  const FRINGE = {
-    "UTG": setOf(["44","A8s","K9s","Q9s","J9s","98s","ATo","KJo","QJo"]),
-    "UTG+1": setOf(["33","A7s","K9s","Q9s","J9s","98s","ATo","KJo","QJo"]),
-    "UTG+2": setOf(["33","A7s","K9s","Q9s","J9s","87s","ATo","KJo","QJo","JTo"]),
-    "MP": setOf(["33","A7s","K8s","Q9s","J9s","87s","A9o","KTo","QTo","JTo"]),
-    "LJ": setOf(["22","A6s","K8s","Q8s","J8s","T8s","65s","A8o","K9o","QTo"]),
-    "HJ": setOf(["K7s","Q8s","J8s","T7s","96s","85s","74s","A7o","K9o","Q9o","J9o"]),
-    "CO": setOf(["K4s","Q6s","J6s","T6s","95s","84s","73s","A4o","K8o","Q8o","J8o","T8o","98o"]),
-    "BTN": setOf(["J2s","J3s","T2s","T3s","T4s","94s","84s","73s","63s","52s","K6o","Q7o","J7o","T7o","97o","87o"]),
-    "SB": setOf(["K2s","K3s","Q4s","Q5s","J5s","J6s","T6s","95s","84s","73s","A4o","K8o","Q8o","J8o","T8o","98o"]),
-    "BB": new Set()
-  };
-
-  const HU_OPEN = setOf(
-    pairsFrom("2"), combosFrom("A","2","s"), combosFrom("A","2","o"),
-    combosFrom("K","2","s"), combosFrom("K","4","o"), combosFrom("Q","2","s"), combosFrom("Q","6","o"),
-    combosFrom("J","2","s"), combosFrom("J","7","o"), combosFrom("T","2","s"), combosFrom("T","7","o"),
-    combosFrom("9","2","s"), combosFrom("9","6","o"), combosFrom("8","3","s"), combosFrom("8","6","o"),
-    combosFrom("7","3","s"), combosFrom("6","3","s"), ["54s","53s","43s"]
-  );
-  const HU_FRINGE = setOf(["K3o","Q5o","J6o","T6o","95o","85o","75o","64o","74o","63o","52s","42s","32s"]);
-  const HU_OPEN_EXTRA = setOf([...HU_FRINGE], ["K2o","Q4o","J5o","T5o","94o","84o","73o","62s","92s","82s","72s"]);
-
-  const THREEBET_TIGHT = setOf(pairsFrom("Q"), ["AKs","AKo"]);
-  const THREEBET_NORMAL = setOf(pairsFrom("J"), ["AQs","AKs","AKo"]);
-  const THREEBET_WIDE = setOf(pairsFrom("T"), ["AJs","AQs","AKs","AQo","AKo","KQs"]);
-  const THREEBET_VERY_WIDE = setOf(pairsFrom("9"), ["ATs","AJs","AQs","AKs","AJo","AQo","AKo","KQs","KQo"]);
-  const CALL_TIGHT = setOf(["JJ","TT","99","AQs","AJs","KQs"]);
-  const CALL_NORMAL = setOf(["JJ","TT","99","88","77","AQs","AJs","ATs","KQs","KJs","QJs","JTs","T9s","AQo"]);
-  const CALL_WIDE = setOf([...CALL_NORMAL,"66","55","A9s","KTs","QTs","98s","87s","AJo","KQo"]);
-  const BB_DEFEND_VS_EARLY = setOf(["66","55","44","33","22","A5s","A4s","A3s","A2s","KTs","QTs","98s","87s"]);
-  const BB_DEFEND_VS_MIDDLE = setOf(["66","55","44","33","22","A9s","A5s","A4s","A3s","A2s","KTs","QTs","98s","87s","76s","65s","AJo","KQo","KTo","QTo","JTo"]);
-  const BB_DEFEND_VS_CO = setOf(["44","33","22","A8s","A7s","A6s","A5s","A4s","A3s","A2s","K9s","K8s","K7s","Q9s","Q8s","J9s","J8s","T8s","97s","86s","76s","65s","54s","A9o","A8o","KTo","K9o","QTo","Q9o","JTo","J9o","T9o"]);
-  const BB_DEFEND_VS_BTN = setOf(["44","33","22","A8s","A7s","A6s","A5s","A4s","A3s","A2s","K9s","K8s","K7s","K6s","K5s","K4s","K3s","K2s","Q9s","Q8s","Q7s","Q6s","Q5s","Q4s","J9s","J8s","J7s","J6s","T8s","T7s","T6s","98s","97s","96s","87s","86s","85s","76s","75s","65s","64s","54s","53s","43s","A9o","A8o","A7o","A6o","A5o","A4o","A3o","A2o","KTo","K9o","K8o","QTo","Q9o","JTo","J9o","T9o","98o"]);
-  const BB_DEFEND_VS_SB = setOf([...BB_DEFEND_VS_BTN,"Q8o","J8o","T8o","97o","87o","76o","K7o"]);
-  const IP_CALL_VS_STEAL = setOf(["44","33","22","A8s","A7s","A6s","K9s","Q9s","J9s","T8s","76s","65s"]);
-  const SB_CALL_VS_STEAL = setOf(["44","33","22","A8s","A7s","A6s","K9s","Q9s","J9s","T8s","98s","87s","76s","65s"]);
-  const LIGHT_3BET = setOf(["A2s","A3s","A4s","A5s","KTs","KJs","QTs","QJs","JTs"]);
-  const SB_STEAL_3BET = setOf([...LIGHT_3BET,"AJo","KQo","K9s","Q9s","T9s"]);
-  const CALL_VS_3BET_TIGHT = setOf(["QQ","JJ","AKs","AKo","AQs"]);
-  const CALL_VS_3BET_NORMAL = setOf(["QQ","JJ","TT","99","AKs","AKo","AQs","AJs","KQs","AQo"]);
-  const CALL_VS_3BET_WIDE = setOf([...CALL_VS_3BET_NORMAL,"88","77","A5s","A4s","A3s","A2s","ATs","KJs","KTs","QJs","QTs","JTs","T9s","98s","AJo","KQo"]);
-  const CALL_VS_3BET_IP_EXTRA = setOf(["66","55","44","33","22","A9s","A8s","A7s","A6s","K9s","K8s","Q9s","Q8s","J9s","J8s","T8s","T7s","98s","87s","76s","65s","54s","KJo","QJo","JTo"]);
-  const BB_GOOD_PRICE_DEFEND = setOf(["Q3s","Q2s","J5s","J4s","T5s","T4s","95s","86s","75s","64s","42s","32s","K7o","Q8o","J8o","T8o","97o","87o","76o"]);
-  const LIGHT_4BET = setOf(["A5s","A4s","A3s","A2s"]);
-  const PREMIUM_DRILL_HANDS = ["AA","KK","QQ","JJ","TT","AKs","AKo","AQs","AQo","KQs"];
-  const BLIND_DEFENSE_DRILL_HANDS = ["A9o","A8s","A5s","KTo","K9s","QTo","Q9s","JTo","J9s","T8s","98s","87s","76s","65s","44","33","22"];
-  const DOMINATED_DRILL_HANDS = ["AJo","ATo","A9o","KQo","KJo","KTo","QJo","QTo","JTo"];
+  const isPlainObject = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  function mergeRangeReference(base, override) {
+    if (!isPlainObject(override)) return base;
+    const out = { ...base };
+    Object.entries(override).forEach(([key, value]) => {
+      if (Array.isArray(value)) out[key] = [...value];
+      else if (isPlainObject(value)) out[key] = mergeRangeReference(isPlainObject(base?.[key]) ? base[key] : {}, value);
+      else out[key] = value;
+    });
+    return out;
+  }
+  const rangeReference = mergeRangeReference(window.PreflopRanges, window.PreflopRangeOverrides);
+  if (!rangeReference?.ranges) throw new Error("Preflop range reference failed to load.");
+  const toSet = (items = []) => setOf(items);
+  const toSetMap = (group = {}) => Object.fromEntries(Object.entries(group).map(([key, items]) => [key, toSet(items)]));
+  const OPEN = toSetMap(rangeReference.ranges.opening);
+  const FRINGE = toSetMap(rangeReference.ranges.fringe);
+  const ISOLATE_VS_LIMP = rangeReference.ranges.isolateVsLimp || {};
+  const OVERLIMP = rangeReference.ranges.overlimp || {};
+  const HU_OPEN = toSet(rangeReference.ranges.headsUp.open);
+  const HU_FRINGE = toSet(rangeReference.ranges.headsUp.fringe);
+  const HU_OPEN_EXTRA = toSet(rangeReference.ranges.headsUp.openExtra);
+  const THREEBET_TIGHT = toSet(rangeReference.ranges.threeBet.tight);
+  const THREEBET_NORMAL = toSet(rangeReference.ranges.threeBet.normal);
+  const THREEBET_WIDE = toSet(rangeReference.ranges.threeBet.wide);
+  const THREEBET_VERY_WIDE = toSet(rangeReference.ranges.threeBet.veryWide);
+  const CALL_TIGHT = toSet(rangeReference.ranges.callVsOpen.tight);
+  const CALL_NORMAL = toSet(rangeReference.ranges.callVsOpen.normal);
+  const CALL_WIDE = toSet(rangeReference.ranges.callVsOpen.wide);
+  const BB_DEFEND_VS_EARLY = toSet(rangeReference.ranges.callVsOpen.bbVsEarly);
+  const BB_DEFEND_VS_MIDDLE = toSet(rangeReference.ranges.callVsOpen.bbVsMiddle);
+  const BB_DEFEND_VS_CO = toSet(rangeReference.ranges.callVsOpen.bbVsCO);
+  const BB_DEFEND_VS_BTN = toSet(rangeReference.ranges.callVsOpen.bbVsBTN);
+  const BB_DEFEND_VS_SB = toSet(rangeReference.ranges.callVsOpen.bbVsSB);
+  const IP_CALL_VS_STEAL = toSet(rangeReference.ranges.callVsOpen.ipVsSteal);
+  const SB_CALL_VS_STEAL = toSet(rangeReference.ranges.callVsOpen.sbVsSteal);
+  const LIGHT_3BET = toSet(rangeReference.ranges.threeBet.light);
+  const SB_STEAL_3BET = toSet(rangeReference.ranges.threeBet.smallBlindSteal);
+  const THREEBET_VS_OPEN = rangeReference.ranges.threeBetVsOpen || {};
+  const POSITION_AWARE_CALLS = toSetMap(rangeReference.ranges.callVsOpen.positionAware || {});
+  const CALL_VS_3BET_TIGHT = toSet(rangeReference.ranges.callVsThreeBet.tight);
+  const CALL_VS_3BET_NORMAL = toSet(rangeReference.ranges.callVsThreeBet.normal);
+  const CALL_VS_3BET_WIDE = toSet(rangeReference.ranges.callVsThreeBet.wide);
+  const CALL_VS_3BET_IP_EXTRA = toSet(rangeReference.ranges.callVsThreeBet.ipExtra);
+  const CALL_VS_3BET_POSITION_AWARE = toSetMap(rangeReference.ranges.callVsThreeBet.positionAware || {});
+  const BB_GOOD_PRICE_DEFEND = toSet(rangeReference.ranges.goodPriceDefend.bb);
+  const LIGHT_4BET = toSet(rangeReference.ranges.fourBet.light);
+  const PREMIUM_DRILL_HANDS = [...rangeReference.drills.premiumHands];
+  const BLIND_DEFENSE_DRILL_HANDS = [...rangeReference.drills.blindDefenseHands];
+  const DOMINATED_DRILL_HANDS = [...rangeReference.drills.dominatedHands];
   const DRILL_SCENARIOS = ["unopened","limpers","open","openCallers","threeBet","fourBet"];
   const PROFILE_OPTIONS = [
     ["unknown", "Unknown"],
@@ -214,6 +191,18 @@
   function speculative(hand) { return (hand.pair && hand.high <= rankValue("9")) || suitedConnector(hand) || suitedOneGapper(hand) || suitedAce(hand); }
   function late(position) { return ["HJ","CO","BTN","BTN/SB"].includes(position); }
   function stealSeat(position) { return late(position) || position === "SB"; }
+  function limpRangePosition(position = state.heroPosition) {
+    const seat = normalizedPosition(position);
+    if (seat === "SB") return "smallBlind";
+    if (seat === "BB") return "bigBlind";
+    if (["UTG","UTG+1","UTG+2"].includes(seat)) return "early";
+    if (["MP","LJ","HJ"].includes(seat)) return "middle";
+    return "late";
+  }
+  function contextualLimpSet(group, limpers, position = state.heroPosition) {
+    const countKey = Number(limpers) > 1 ? "multiple" : "one";
+    return toSet(group?.[countKey]?.[limpRangePosition(position)] || []);
+  }
 
   function cardText(card) {
     if (!card) return "";
@@ -941,7 +930,7 @@
   function defaultOpenSizeBB() { return $("environment").value === "live" ? 3 : 2.5; }
 
   function dynamicFieldSnapshot() {
-    const ids = ["openBase","anteBB","limperCount","opponentProfile","aggressorPosition","aggressorSize","callerCount","heroOpenSize","heroThreeBetSize"];
+    const ids = ["openBase","anteBB","limperCount","opponentProfile","opponentVPIP","opponentPFR","aggressorPosition","aggressorSize","callerCount","heroOpenSize","heroThreeBetSize"];
     return ids.reduce((values, id) => {
       const el = $(id);
       if (el) values[id] = el.value;
@@ -972,17 +961,17 @@
     }
 
     if (state.scenario === "limpers") {
-      html += `<div class="field"><label for="limperCount">Limpers</label><input id="limperCount" type="number" min="1" max="9" value="2"></div><div class="field"><label for="opponentProfile">Typical limper</label><select id="opponentProfile" data-profile-select="opponent">${profileOptions()}</select></div>`;
+      html += `<div class="field"><label for="limperCount">Limpers</label><input id="limperCount" type="number" min="1" max="9" value="2"></div><div class="field"><label for="opponentProfile">Typical limper</label><select id="opponentProfile" data-profile-select="opponent">${profileOptions()}</select></div><div class="field"><label for="opponentVPIP">Limper VPIP (optional)</label><div class="input-with-suffix"><input id="opponentVPIP" type="number" min="0" max="100" step="1" placeholder="e.g. 45"><span>%</span></div></div>`;
     }
     if (["open","openCallers"].includes(state.scenario)) {
-      html += `<div class="field"><label for="aggressorPosition">Opener position</label><select id="aggressorPosition">${positionOptions("beforeHero")}</select></div><div class="field"><label for="opponentProfile">Opener profile</label><select id="opponentProfile" data-profile-select="opponent">${profileOptions()}</select></div><div class="field"><label for="aggressorSize">Open size</label><div class="input-with-suffix"><input id="aggressorSize" type="number" min="2" max="20" step="0.5" value="3"><span>BB</span></div></div>`;
+      html += `<div class="field"><label for="aggressorPosition">Opener position</label><select id="aggressorPosition">${positionOptions("beforeHero")}</select></div><div class="field"><label for="opponentProfile">Opener profile</label><select id="opponentProfile" data-profile-select="opponent">${profileOptions()}</select></div><div class="field"><label for="opponentVPIP">Opener VPIP (optional)</label><div class="input-with-suffix"><input id="opponentVPIP" type="number" min="0" max="100" step="1" placeholder="e.g. 35"><span>%</span></div></div><div class="field"><label for="opponentPFR">Opener PFR (optional)</label><div class="input-with-suffix"><input id="opponentPFR" type="number" min="0" max="100" step="1" placeholder="e.g. 24"><span>%</span></div></div><div class="field"><label for="aggressorSize">Open size</label><div class="input-with-suffix"><input id="aggressorSize" type="number" min="2" max="20" step="0.5" value="3"><span>BB</span></div></div>`;
       if (state.scenario === "openCallers") html += `<div class="field"><label for="callerCount">Cold callers</label><input id="callerCount" type="number" min="1" max="8" value="1"></div>`;
     }
     if (state.scenario === "threeBet") {
-      html += `<div class="field"><label for="heroOpenSize">Your open</label><div class="input-with-suffix"><input id="heroOpenSize" type="number" min="2" max="10" step="0.5" value="${baseOpen}"><span>BB</span></div></div><div class="field"><label for="aggressorPosition">3-bettor position</label><select id="aggressorPosition">${positionOptions("afterHero")}</select></div><div class="field"><label for="opponentProfile">3-bettor profile</label><select id="opponentProfile" data-profile-select="opponent">${profileOptions()}</select></div><div class="field"><label for="aggressorSize">3-bet size</label><div class="input-with-suffix"><input id="aggressorSize" type="number" min="5" max="50" step="0.5" value="10"><span>BB</span></div></div>`;
+      html += `<div class="field"><label for="heroOpenSize">Your open</label><div class="input-with-suffix"><input id="heroOpenSize" type="number" min="2" max="10" step="0.5" value="${baseOpen}"><span>BB</span></div></div><div class="field"><label for="aggressorPosition">3-bettor position</label><select id="aggressorPosition">${positionOptions("afterHero")}</select></div><div class="field"><label for="opponentProfile">3-bettor profile</label><select id="opponentProfile" data-profile-select="opponent">${profileOptions()}</select></div><div class="field"><label for="opponentVPIP">3-bettor VPIP (optional)</label><div class="input-with-suffix"><input id="opponentVPIP" type="number" min="0" max="100" step="1" placeholder="e.g. 35"><span>%</span></div></div><div class="field"><label for="opponentPFR">3-bettor PFR (optional)</label><div class="input-with-suffix"><input id="opponentPFR" type="number" min="0" max="100" step="1" placeholder="e.g. 24"><span>%</span></div></div><div class="field"><label for="aggressorSize">3-bet size</label><div class="input-with-suffix"><input id="aggressorSize" type="number" min="5" max="50" step="0.5" value="10"><span>BB</span></div></div>`;
     }
     if (state.scenario === "fourBet") {
-      html += `<div class="field"><label for="heroThreeBetSize">Your 3-bet</label><div class="input-with-suffix"><input id="heroThreeBetSize" type="number" min="5" max="30" step="0.5" value="10"><span>BB</span></div></div><div class="field"><label for="aggressorPosition">4-bettor position</label><select id="aggressorPosition">${positionOptions("beforeHero")}</select></div><div class="field"><label for="opponentProfile">4-bettor profile</label><select id="opponentProfile" data-profile-select="opponent">${profileOptions()}</select></div><div class="field"><label for="aggressorSize">4-bet size</label><div class="input-with-suffix"><input id="aggressorSize" type="number" min="12" max="100" step="0.5" value="23"><span>BB</span></div></div>`;
+      html += `<div class="field"><label for="heroThreeBetSize">Your 3-bet</label><div class="input-with-suffix"><input id="heroThreeBetSize" type="number" min="5" max="30" step="0.5" value="10"><span>BB</span></div></div><div class="field"><label for="aggressorPosition">4-bettor position</label><select id="aggressorPosition">${positionOptions("beforeHero")}</select></div><div class="field"><label for="opponentProfile">4-bettor profile</label><select id="opponentProfile" data-profile-select="opponent">${profileOptions()}</select></div><div class="field"><label for="opponentVPIP">4-bettor VPIP (optional)</label><div class="input-with-suffix"><input id="opponentVPIP" type="number" min="0" max="100" step="1" placeholder="e.g. 30"><span>%</span></div></div><div class="field"><label for="opponentPFR">4-bettor PFR (optional)</label><div class="input-with-suffix"><input id="opponentPFR" type="number" min="0" max="100" step="1" placeholder="e.g. 20"><span>%</span></div></div><div class="field"><label for="aggressorSize">4-bet size</label><div class="input-with-suffix"><input id="aggressorSize" type="number" min="12" max="100" step="0.5" value="23"><span>BB</span></div></div>`;
     }
 
     wrap.innerHTML = html;
@@ -996,13 +985,14 @@
 
   function openRangeDescription(position) {
     if (position === "BTN/SB") return "Heads-up button range. Position after the flop supports a much wider open.";
+    if (position === "BB") return "Composite big blind defense map. Exact continues depend heavily on opener position, open size, antes, rake, and reads.";
     if (["UTG","UTG+1","UTG+2"].includes(position)) return "Early position. Keep the range strong because many players remain behind.";
     if (["MP","LJ"].includes(position)) return "Middle position. Add suited aces, broadways, pairs, and selected connectors.";
     if (position === "HJ") return "The first clearly wide attacking seat at most full-ring tables.";
     if (position === "CO") return "A wide late-position range with substantial steal value.";
     if (position === "BTN") return "The widest standard opening seat because you retain position after the flop.";
     if (position === "SB") return "Wide enough to attack, but out-of-position play makes weak opens less forgiving.";
-    return "The big blind does not open when action folds through. It either wins the pot or responds to prior action.";
+    return "A simplified baseline range for this seat.";
   }
 
   function handCombos(label) { return label.length === 2 ? 6 : label.endsWith("s") ? 4 : 12; }
@@ -1012,12 +1002,174 @@
     return { combos, percent: combos / 1326 * 100 };
   }
 
+  function rangeScenarioAllowed(position, scenario, playerCount) {
+    return model.scenarioAllowed({ playerCount, position, scenario });
+  }
+
+  function bbCallDefenseSet() {
+    return setOf([...BB_DEFEND_VS_EARLY], [...BB_DEFEND_VS_MIDDLE], [...BB_DEFEND_VS_CO], [...BB_DEFEND_VS_BTN], [...BB_DEFEND_VS_SB]);
+  }
+
+  function rangeThreeBetSet(position, playerCount = state.playerCount) {
+    if (!rangeScenarioAllowed(position, "open", playerCount)) return new Set();
+    const seat = normalizedPosition(position);
+    const pressure = ["SB","BB"].includes(seat) ? SB_STEAL_3BET : LIGHT_3BET;
+    return setOf([...THREEBET_WIDE], [...pressure]);
+  }
+
+  function rangeFourBetSet(position, playerCount = state.playerCount) {
+    if (!rangeScenarioAllowed(position, "threeBet", playerCount)) return new Set();
+    return setOf(["AA","KK","QQ","AKs","AKo"], [...LIGHT_4BET]);
+  }
+
+  function rangeCallSet(position, playerCount = state.playerCount) {
+    if (!rangeScenarioAllowed(position, "open", playerCount)) return new Set();
+    const seat = normalizedPosition(position);
+    if (seat === "BB") return bbCallDefenseSet();
+    if (seat === "SB") return setOf([...CALL_NORMAL], [...CALL_WIDE], [...SB_CALL_VS_STEAL]);
+    return setOf([...CALL_NORMAL], [...CALL_WIDE], [...IP_CALL_VS_STEAL]);
+  }
+
+  function bbDefenseSet(playerCount = state.playerCount) {
+    return setOf([...rangeThreeBetSet("BB", playerCount)], [...bbCallDefenseSet()]);
+  }
+
+  function bbDefenseFringeSet(playerCount = state.playerCount) {
+    const baseline = bbDefenseSet(playerCount);
+    return setOf([...BB_GOOD_PRICE_DEFEND].filter((label) => !baseline.has(label)));
+  }
+
+  function rangePrimarySet(position, playerCount = state.playerCount) {
+    return position === "BB" ? bbDefenseSet(playerCount) : openingSet(position, playerCount);
+  }
+
+  function rangeSecondarySet(position, playerCount = state.playerCount) {
+    return position === "BB" ? bbDefenseFringeSet(playerCount) : fringeSet(position, playerCount);
+  }
+
+  function rangeDisplayTitle(position) {
+    return position === "BB" ? "BB defense map" : `${position} opening map`;
+  }
+
+  function rangeDescriptionText(position) {
+    const description = openRangeDescription(position);
+    if (position === "BB") return `${description} The big blind has no unopened open; colors show defense families versus a prior open.`;
+    return `${description} Green is the unopened open; a stripe marks the call, 3-bet, or 4-bet branch.`;
+  }
+
+  function rangeMetricText(position, stats) {
+    return `${stats.combos} ${position === "BB" ? "defense" : "opening"} combinations`;
+  }
+
+  function rangeActionType(label, position, playerCount = state.playerCount) {
+    const openFirstIn = position !== "BB" && openingSet(position, playerCount).has(label);
+    const inPrimary = rangePrimarySet(position, playerCount).has(label);
+    const inFringe = rangeSecondarySet(position, playerCount).has(label);
+    const isActionHand = openFirstIn || position === "BB" && inPrimary;
+    if (isActionHand && openFirstIn && rangeFourBetSet(position, playerCount).has(label)) return "fourbet";
+    if (isActionHand && rangeThreeBetSet(position, playerCount).has(label)) return "threebet";
+    if (isActionHand && rangeCallSet(position, playerCount).has(label)) return "call";
+    if (openFirstIn) return "open";
+    if (inFringe) return "fringe";
+    return "fold";
+  }
+
+  function rangeCellClasses(label, position, playerCount = state.playerCount) {
+    const type = rangeActionType(label, position, playerCount);
+    const openFirstIn = position !== "BB" && openingSet(position, playerCount).has(label);
+    if (openFirstIn) return type === "open" ? ["open"] : ["open", type];
+    const className = rangeActionDetails(label, position, playerCount).className;
+    return className ? [className] : [];
+  }
+
+  function rangeActionDetails(label, position, playerCount = state.playerCount) {
+    const type = rangeActionType(label, position, playerCount);
+    const isBigBlind = position === "BB";
+    const details = {
+      fourbet: {
+        className: "fourbet",
+        label: "4-bet after opening",
+        description: "Opens first in and can pressure selected 3-bets."
+      },
+      threebet: {
+        className: "threebet",
+        label: "3-bet vs open",
+        description: isBigBlind ? "Defends the big blind by raising an open." : "Opens first in and can 3-bet when action starts ahead."
+      },
+      call: {
+        className: "call",
+        label: "Call or defend",
+        description: isBigBlind ? "Defends the big blind mostly by calling." : "Opens first in and often continues by calling versus an open."
+      },
+      open: {
+        className: "open",
+        label: "Open first-in only",
+        description: "Baseline open when the pot is unopened; fold more often after prior aggression."
+      },
+      fringe: {
+        className: "fringe",
+        label: "Borderline exploit",
+        description: isBigBlind ? "Good-price defense candidate, not a default continue." : "Outside the baseline open, but useful in favorable table conditions."
+      },
+      fold: {
+        className: "",
+        label: "Fold by default",
+        description: "Outside the simplified baseline map."
+      }
+    };
+    return details[type] || details.fold;
+  }
+
+  function rangeScenarioForAction(type, position) {
+    if (position === "BB") return "open";
+    if (type === "fourbet") return "threeBet";
+    if (type === "threebet" || type === "call") return "open";
+    return "unopened";
+  }
+
+  function chooseRangeAggressorDefault(type) {
+    const select = $("aggressorPosition");
+    if (!select) return false;
+    const options = Array.from(select.options);
+    if (!options.length) return false;
+    let preferred = null;
+    if (state.scenario === "threeBet") preferred = options.find((option) => ["BB","SB","BTN"].includes(option.value));
+    if (!preferred && state.scenario === "open" && state.heroPosition === "BB") preferred = options.find((option) => option.value === "BTN") || options.find((option) => option.value === "BTN/SB");
+    if (!preferred && (type === "threebet" || type === "call")) preferred = options.at(-1);
+    preferred ||= options[0];
+    select.value = preferred.value;
+    return true;
+  }
+
+  function rangeLegendItems(position) {
+    if (position === "BB") return [
+      ["call", "Call / defend vs open"],
+      ["threebet", "3-bet vs open"],
+      ["fringe", "Good-price candidate"],
+      ["", "Fold by default"]
+    ];
+    return [
+      ["open", "Open first-in"],
+      ["open-call", "Open + call branch"],
+      ["open-threebet", "Open + 3-bet branch"],
+      ["open-fourbet", "Open + 4-bet branch"],
+      ["fringe", "Borderline exploit"],
+      ["", "Fold by default"]
+    ];
+  }
+
+  function renderRangeLegend(position) {
+    const legend = $("rangeLegend");
+    if (!legend) return;
+    legend.innerHTML = rangeLegendItems(position).map(([className, label]) => `<span class="legend-item"><span class="legend-swatch ${escapeHtml(className)}"></span>${escapeHtml(label)}</span>`).join("");
+  }
+
   function renderRangePositionList() {
     const count = Number($("rangePlayerCount").value);
-    const layout = POSITION_LAYOUTS[count].filter((p) => p !== "BB");
+    const layout = POSITION_LAYOUTS[count];
     if (!layout.includes(state.rangePosition)) state.rangePosition = layout.includes("BTN") ? "BTN" : layout[0];
     $("rangePositionList").innerHTML = layout.map((position) => {
-      const stats = rangeStats(openingSet(position, count));
+      const stats = rangeStats(rangePrimarySet(position, count));
       return `<button class="position-choice ${position === state.rangePosition ? "active" : ""}" data-position="${position}"><span>${position}</span><small>${stats.percent.toFixed(1)}%</small></button>`;
     }).join("");
     document.querySelectorAll(".position-choice").forEach((button) => button.addEventListener("click", () => { state.rangePosition = button.dataset.position; renderRangeLab(); }));
@@ -1059,7 +1211,7 @@
       const fringe = [...fringeSet(position)];
       const tactical = scenario === "unopened"
         ? fringe
-        : [...CALL_NORMAL, ...CALL_WIDE, ...LIGHT_3BET, ...BB_DEFEND_EXTRA, ...DOMINATED_DRILL_HANDS];
+        : [...CALL_NORMAL, ...CALL_WIDE, ...LIGHT_3BET, ...bbDefenseSet(), ...bbDefenseFringeSet(), ...DOMINATED_DRILL_HANDS];
       return uniqueLabels(tactical.length ? tactical : fringe);
     }
     return allHandLabels();
@@ -1157,12 +1309,13 @@
   function renderRangeLab() {
     renderRangePositionList();
     const count = Number($("rangePlayerCount").value);
-    const openSet = openingSet(state.rangePosition, count), fringe = fringeSet(state.rangePosition, count);
+    const openSet = rangePrimarySet(state.rangePosition, count);
     const stats = rangeStats(openSet);
-    $("rangeTitle").textContent = `${state.rangePosition} opening range`;
-    $("rangeDescription").textContent = openRangeDescription(state.rangePosition);
+    $("rangeTitle").textContent = rangeDisplayTitle(state.rangePosition);
+    $("rangeDescription").textContent = rangeDescriptionText(state.rangePosition);
     $("rangePercent").textContent = `${stats.percent.toFixed(1)}%`;
-    $("rangeCombos").textContent = `${stats.combos} combinations`;
+    $("rangeCombos").textContent = rangeMetricText(state.rangePosition, stats);
+    renderRangeLegend(state.rangePosition);
     const selected = state.cards.every(Boolean) ? handLabel(classifyCards(state.cards[0], state.cards[1])) : "";
     const matrix = $("rangeMatrix");
     matrix.innerHTML = "";
@@ -1170,14 +1323,15 @@
       for (let col = 0; col < 13; col += 1) {
         const label = matrixLabel(row,col);
         const button = document.createElement("button");
+        const action = rangeActionDetails(label, state.rangePosition, count);
         button.type = "button";
         button.className = "range-cell";
-        if (openSet.has(label)) button.classList.add("open");
-        else if (fringe.has(label)) button.classList.add("fringe");
+        rangeCellClasses(label, state.rangePosition, count).forEach((className) => button.classList.add(className));
         if (label === selected) button.classList.add("selected");
         button.textContent = label;
-        button.title = `Load ${label} into the coach`;
+        button.title = `${label}: ${action.label}. ${action.description}`;
         button.addEventListener("click", () => {
+          const actionType = rangeActionType(label, state.rangePosition, count);
           state.cards = representativeCards(label);
           const coachCount = Number($("playerCount").value);
           if (coachCount !== Number($("rangePlayerCount").value)) {
@@ -1185,10 +1339,15 @@
             state.playerCount = Number($("playerCount").value);
           }
           if (positionLayout().includes(state.rangePosition)) setHeroPosition(state.rangePosition, { snap: true });
-          state.scenario = "unopened";
+          state.scenario = rangeScenarioForAction(actionType, state.rangePosition);
           switchView("coach");
           renderAllCore();
-          showToast(`${label} loaded into the coach.`);
+          if (chooseRangeAggressorDefault(actionType)) {
+            renderSeats();
+            autoAnalyze();
+          }
+          const loadedSpot = state.scenario === "threeBet" ? "facing a 3-bet" : state.scenario === "open" ? "facing an open" : "first in";
+          showToast(`${label} loaded as ${state.heroPosition} ${loadedSpot}.`);
         });
         matrix.appendChild(button);
       }
@@ -1309,6 +1468,27 @@
     return hand.suited ? "suited hand" : "offsuit hand";
   }
 
+  function smallPocketPair(hand) {
+    return hand.pair && hand.high <= rankValue("7");
+  }
+
+  function realizedEquityNote(hand, label) {
+    if (smallPocketPair(hand)) return "Small pairs usually realize equity better by calling for set value than by turning into a 3-bet.";
+    if (suitedAce(hand)) return "Suited aces realize equity well through nut-flush potential and blocker value.";
+    if (suitedConnector(hand) || suitedOneGapper(hand)) return "Suited connectors and one-gappers often realize equity better than their raw all-in equity suggests.";
+    if (dominatedOffsuit(label)) return "Offsuit broadways can look strong in raw equity but often realize poorly when dominated.";
+    return "Realized equity matters more than raw preflop equity once future streets and position enter the hand.";
+  }
+
+  function linearThreeBetNote(context) {
+    if (context === "early") return "Default to a linear 3-bet range against strong or early opens: raise the hands that are happy continuing when called.";
+    return "This is a linear value 3-bet: raise the strongest continuing hands instead of flattening too much.";
+  }
+
+  function polarizedThreeBetOptionNote() {
+    return "A polarized 3-bet is only an optional pressure line here, not the default. Use it when late position, blockers, sizing, and fold equity all line up.";
+  }
+
   function postflopPlan(hand, label) {
     if (["AA","KK","QQ","JJ","TT"].includes(label)) return {
       goal: "Build value on safe boards without treating one pair as invincible.",
@@ -1378,6 +1558,56 @@
     return Number.isFinite(number) ? number : fallback;
   }
 
+  function optionalPercent(id) {
+    const raw = $(id)?.value;
+    if (raw == null || String(raw).trim() === "") return null;
+    const value = Number(raw);
+    return Number.isFinite(value) && value >= 0 && value <= 100 ? value : null;
+  }
+
+  function aggressorStats() {
+    return { vpip: optionalPercent("opponentVPIP"), pfr: optionalPercent("opponentPFR") };
+  }
+
+  function pfrStrengthBias(stats = aggressorStats()) {
+    if (stats.pfr == null) return 0;
+    if (stats.pfr <= 8) return 2;
+    if (stats.pfr <= 14) return 1;
+    if (stats.pfr >= 28) return -2;
+    if (stats.pfr >= 20) return -1;
+    return 0;
+  }
+
+  function aggressorStatNote(stats = aggressorStats()) {
+    if (stats.pfr == null) return "No PFR is entered, so position and the selected profile define the raising range.";
+    if (stats.vpip != null && stats.vpip >= 35 && stats.pfr <= 10) return `The ${stats.vpip}% VPIP / ${stats.pfr}% PFR gap indicates loose calling but a comparatively strong raising range.`;
+    if (stats.pfr >= 28) return `A ${stats.pfr}% PFR indicates a genuinely wide raising range; VPIP alone would not justify this adjustment.`;
+    return `The entered ${stats.pfr}% PFR adjusts the raising range independently of VPIP.`;
+  }
+
+  function preflopActionContext(label = "") {
+    const numberOfLimpers = state.scenario === "limpers" ? clamp(validNumber($("limperCount")?.value, 1), 1, state.playerCount - 1) : 0;
+    const numberOfCallers = state.scenario === "openCallers" ? clamp(validNumber($("callerCount")?.value, 1), 1, 8) : 0;
+    const raiseSize = ["open","openCallers","threeBet","fourBet"].includes(state.scenario)
+      ? validNumber($("aggressorSize")?.value, 0)
+      : 0;
+    const stats = aggressorStats();
+    return {
+      heroPosition: state.heroPosition,
+      hand: label,
+      actionType: state.scenario,
+      situation: model.preflopSituation({ actionType: state.scenario, numberOfLimpers, numberOfCallers }),
+      aggressorPosition: $("aggressorPosition")?.value || null,
+      numberOfLimpers,
+      numberOfCallers,
+      raiseSize,
+      raiseSizeBucket: model.raiseSizeBucket(raiseSize),
+      effectiveStack: validNumber($("effectiveStack")?.value, 100),
+      opponentVPIP: stats.vpip,
+      opponentPFR: stats.pfr
+    };
+  }
+
   function currentProfile() { return $("opponentProfile")?.value || "unknown"; }
 
   function recommendationBase(action, className, headline, summary, sizeBB, confidence, metrics, why, alternatives, commitment, plan, baseline, exploit) {
@@ -1389,6 +1619,12 @@
   function validateBettingContext() {
     const stack = validNumber($("effectiveStack").value, 100);
     if (stack <= 0) return "Effective stack must be above 0 BB.";
+    for (const [id, label] of [["opponentVPIP", "VPIP"], ["opponentPFR", "PFR"]]) {
+      const raw = $(id)?.value;
+      if (raw == null || String(raw).trim() === "") continue;
+      const value = Number(raw);
+      if (!Number.isFinite(value) || value < 0 || value > 100) return `${label} must be between 0% and 100%.`;
+    }
 
     if (["unopened","limpers"].includes(state.scenario)) {
       const openSize = validNumber($("openBase")?.value, defaultOpenSizeBB());
@@ -1481,20 +1717,23 @@
     if (vpip.loose || vpip.veryLoose) size += vpip.veryLoose ? 1 : 0.5;
     if (profileCallsTooMuch(profile)) size += 0.5;
     size = Math.min(Math.max(1, size + profileSizeBias(profile)), stack);
-    const strong = premium(label) || pairAtLeast(hand,"9") || ["ATs","AJs","AQs","AKs","AJo","AQo","AKo","KJs","KQs","KQo","QJs"].includes(label);
-    const playable = late(state.heroPosition) && (["A8s","A9s","KTs","QTs","JTs","T9s"].includes(label) || hand.pair && hand.high >= rankValue("5"));
-    const canOverlimp = speculative(hand) && stack >= 80 && (!oop || state.heroPosition === "BB");
-    if (strong || playable && !profileIsNit(profile)) return recommendationBase("RAISE", "raise", `Isolate with ${label}`, "Your hand is strong enough to build a pot against ranges that entered passively.", size, strong ? "High" : "Medium", {}, [
+    const isoSet = contextualLimpSet(ISOLATE_VS_LIMP, limpers);
+    const overlimpSet = contextualLimpSet(OVERLIMP, limpers);
+    const strong = premium(label) || pairAtLeast(hand,"T") || ["AQs","AKs","AQo","AKo","KQs"].includes(label);
+    const canIsolate = isoSet.has(label) && (!profileIsNit(profile) || strong);
+    const canOverlimp = overlimpSet.has(label) && stack >= (hand.pair ? 50 : 70) && state.heroPosition !== "BB" && $("playersBehind").value !== "squeezy";
+    const situationText = limpers === 1 ? "one limper" : `${limpers} limpers`;
+    if (canIsolate) return recommendationBase("RAISE", "raise", `Isolation raise with ${label}`, `This hand belongs in the ${state.heroPosition} isolation range against ${situationText}.`, size, strong ? "High" : "Medium", {}, [
       "Limping ranges are generally weaker than opening ranges.",
       `The size accounts for ${limpers} limper${limpers > 1 ? "s" : ""}${oop ? " and your positional disadvantage" : ""}.`,
       profileCallsTooMuch(profile) ? "The observed calling tendency supports a larger, value-heavy raise." : vpip.loose || vpip.veryLoose ? `The table average VPIP is ${vpip.average.toFixed(0)}%, so the isolation raise leans more value-heavy.` : "The raise can win immediately or create a pot where you hold the stronger range."
-    ], ["Overlimping lets weaker hands realize equity cheaply.", "A tiny raise is likely to create a large multiway pot."], "If several players call, one pair becomes less valuable. Do not confuse a large preflop pot with an obligation to stack off.", postflopPlan(hand,label), "Raise strong and playable value hands over limpers.", profileCallsTooMuch(profile) ? "Size up for value and reduce bluff isolation raises." : "Use normal isolation pressure.");
+    ], ["Overlimp the separate multiway range instead of raising every playable hand.", "A tiny raise is likely to create a large multiway pot."], "If several players call, one pair becomes less valuable. Do not confuse a large preflop pot with an obligation to stack off.", postflopPlan(hand,label), `Isolation-raise the ${limpers === 1 ? "one-limper" : "multiple-limper"} range for this seat.`, profileCallsTooMuch(profile) ? "Size up for value and reduce bluff isolation raises." : "Use normal isolation pressure.");
     if (state.heroPosition === "BB") return recommendationBase("CHECK", "call", `Check ${label}`, "You can see the flop without investing another chip.", 0, "High", {}, [
       "The big blind already has the option to check after limpers.",
-      canOverlimp ? "The hand has enough speculative value to take a free flop." : "Even a weak hand should take the free option rather than fold.",
+      overlimpSet.has(label) ? "The hand has enough speculative value to welcome a free flop." : "Even a weak hand should take the free option rather than fold.",
       "Raising is optional only when the limpers are likely to fold or call with much worse."
     ], ["Do not fold when checking is free.", "Do not automatically inflate the pot with a marginal hand."], "A free flop does not mean you must continue when you make a weak pair.", postflopPlan(hand,label), "Check.", "Raise selectively against limp-folders, not automatically.");
-    if (canOverlimp && late(state.heroPosition)) return recommendationBase("CALL", "call", `Overlimp ${label}`, "Deep stacks and position allow this speculative hand to realize value at a low price.", 1, "Medium", {}, ["The hand can make sets, straights, flushes, or strong draws.", "Position improves equity realization.", "The call stays small relative to the effective stack."], ["Fold if a large raise behind is likely.", "Do not overlimp dominated offsuit broadways just because the price looks cheap."], "The preflop call buys a chance to improve. It does not buy the right to chase every draw.", postflopPlan(hand,label), "Call selectively with deep, playable hands.", "Prefer raising when the limpers fold too much.");
+    if (canOverlimp) return recommendationBase("CALL", "call", `Overlimp with ${label}`, `This hand belongs in the ${state.heroPosition} multiway calling range behind ${situationText}.`, 1, "Medium", {}, ["The hand can make sets, straights, flushes, or strong draws.", late(state.heroPosition) ? "Late position improves equity realization." : "The range stays selective because players remain behind.", "The call stays small relative to the effective stack."], ["Fold if a large raise behind is likely.", "Do not overlimp dominated offsuit broadways just because the price looks cheap."], "The preflop call buys a chance to improve. It does not buy the right to chase every draw.", postflopPlan(hand,label), `Overlimp the ${limpers === 1 ? "one-limper" : "multiple-limper"} range for this seat.`, "Prefer raising hands in the separate isolation range when the limpers continue with worse.");
     return recommendationBase("FOLD", "fold", `Skip the limp with ${label}`, "The hand is likely to make weak pairs and expensive second-best holdings.", 0, "High", {}, ["Cheap calls accumulate quickly over a session.", "The hand lacks enough nut potential or domination value.", "Position does not rescue every suited or connected hand."], ["A deeper stack and later position can make selected speculative hands playable.", "The big blind can check instead of folding when no raise occurred."], "You are not losing the pot by folding. You are declining a negative-price entry.", postflopPlan(hand,label), "Fold.", "Do not copy the table's loose calls without a clear reason.");
   }
 
@@ -1549,14 +1788,48 @@
     return "early";
   }
 
+  function threeBetNode(opener, hero = state.heroPosition) {
+    const tierKey = ({ early: "vsEarly", middle: "vsMiddle", cutoff: "vsCO", button: "vsBTN", blind: "vsSB" })[openerTier(opener)];
+    const tier = THREEBET_VS_OPEN[tierKey] || {};
+    const seat = normalizedPosition(hero);
+    const branch = tierKey === "vsSB" && seat === "BB"
+      ? tier.bigBlind
+      : ["SB","BB"].includes(seat)
+        ? tier.blinds
+        : tier.inPosition;
+    return {
+      value: toSet(branch?.value || []),
+      bluff: toSet(branch?.bluff || [])
+    };
+  }
+
+  function positionAwareCallSet(hero, opener, strength) {
+    const heroSeat = normalizedPosition(hero);
+    const openerSeat = normalizedPosition(opener);
+    const exactKey =
+      heroSeat === "BTN" && openerSeat === "CO" ? "btnVsCO" :
+      heroSeat === "CO" && openerSeat === "HJ" ? "coVsHJ" :
+      heroSeat === "HJ" && ["LJ","MP"].includes(openerSeat) ? "hjVsLJ" :
+      heroSeat === "SB" && openerSeat === "CO" ? "sbVsCO" :
+      heroSeat === "SB" && openerSeat === "BTN" ? "sbVsBTN" : "";
+    if (exactKey && POSITION_AWARE_CALLS[exactKey]?.size) return POSITION_AWARE_CALLS[exactKey];
+    return strength >= 3 ? CALL_TIGHT : strength <= 0 ? CALL_WIDE : CALL_NORMAL;
+  }
+
   function bbDefenseExtras(opener, openSize) {
     const tier = openerTier(opener);
-    const largerOpen = openSize >= 3;
-    if (tier === "blind") return largerOpen ? BB_DEFEND_VS_BTN : BB_DEFEND_VS_SB;
-    if (tier === "button") return largerOpen ? BB_DEFEND_VS_CO : BB_DEFEND_VS_BTN;
-    if (tier === "cutoff") return largerOpen ? BB_DEFEND_VS_MIDDLE : BB_DEFEND_VS_CO;
-    if (tier === "middle" && openSize <= 2.5) return BB_DEFEND_VS_MIDDLE;
-    if (tier === "early" && openSize <= 3) return BB_DEFEND_VS_EARLY;
+    const sizeBucket = model.raiseSizeBucket(openSize);
+    if (sizeBucket === "large") {
+      if (tier === "blind" || tier === "button") return BB_DEFEND_VS_CO;
+      if (tier === "cutoff") return BB_DEFEND_VS_MIDDLE;
+      if (tier === "middle") return BB_DEFEND_VS_EARLY;
+      return new Set();
+    }
+    if (tier === "blind") return sizeBucket === "small" ? BB_DEFEND_VS_SB : BB_DEFEND_VS_BTN;
+    if (tier === "button") return BB_DEFEND_VS_BTN;
+    if (tier === "cutoff") return BB_DEFEND_VS_CO;
+    if (tier === "middle") return BB_DEFEND_VS_MIDDLE;
+    if (tier === "early") return BB_DEFEND_VS_EARLY;
     return new Set();
   }
 
@@ -1577,60 +1850,109 @@
     return base;
   }
 
+  function contextualThreeBetCallSet(strength, ip, stack, villain) {
+    const villainSeat = normalizedPosition(villain);
+    const blindResteal = ip && ["SB","BB"].includes(villainSeat) && stealSeat(state.heroPosition);
+    const contextual = blindResteal
+      ? CALL_VS_3BET_POSITION_AWARE.ipVsBlindResteal
+      : ip
+        ? CALL_VS_3BET_POSITION_AWARE.inPosition
+        : CALL_VS_3BET_POSITION_AWARE.outOfPosition;
+    if (contextual?.size) {
+      if (strength >= 3) return setOf([...contextual].filter((item) => CALL_VS_3BET_TIGHT.has(item)));
+      if (strength <= 0 && ip && stack >= 70) return setOf([...contextual], ...threeBetCallSet(strength, ip, stack));
+      return contextual;
+    }
+    return threeBetCallSet(strength, ip, stack);
+  }
+
   function facingOpenRecommendation(hand,label) {
     const opener = $("aggressorPosition").value;
     const profile = currentProfile();
+    const stats = aggressorStats();
     const openSize = validNumber($("aggressorSize").value, 3);
+    const sizeBucket = model.raiseSizeBucket(openSize);
     const callers = state.scenario === "openCallers" ? clamp(Number($("callerCount").value || 1),1,8) : 0;
     const stack = validNumber($("effectiveStack").value, 100);
     const ip = inPosition(state.heroPosition, opener);
     const vpip = tableVpipContext();
     const tableSticky = tableVpipCallsTooMuch();
-    const strength = clamp(openingRangeStrength(opener, profile) + tableVpipStrengthBias(profile), -2, 4);
+    // VPIP describes how often a player enters; PFR is the direct signal for
+    // how wide to model a raise. High VPIP alone never loosens this branch.
+    const strength = clamp(openingRangeStrength(opener, profile) + pfrStrengthBias(stats), -2, 4);
     const bigOpen = openSize >= 5 || openSize / stack >= .08;
     const callCost = callCostTo(openSize);
     const callerBets = Array.from({ length: callers }, () => ({ position: null, totalBetBB: openSize }));
     const potBefore = potWithBets([{ position: opener, totalBetBB: openSize }, ...callerBets]);
     const potOdds = potOddsPercent(callCost, potBefore);
-    let valueSet = THREEBET_NORMAL;
-    if (strength >= 3) valueSet = THREEBET_TIGHT;
-    if (strength <= 0) valueSet = THREEBET_WIDE;
-    if (strength <= -1 || selectedReads(profile).has("jamsWide")) valueSet = THREEBET_VERY_WIDE;
+    const node = threeBetNode(opener);
+    let valueSet = node.value.size ? node.value : THREEBET_NORMAL;
+    if (strength >= 3) valueSet = setOf([...valueSet].filter((item) => THREEBET_TIGHT.has(item)));
+    if (strength <= 0) valueSet = setOf([...valueSet], [...THREEBET_WIDE]);
+    if (strength <= -1 || selectedReads(profile).has("jamsWide")) valueSet = setOf([...valueSet], [...THREEBET_VERY_WIDE]);
     const value3bet = valueSet.has(label);
     const stealOpener = openingRangeScore(opener) <= 0;
     const blindResteal = state.heroPosition === "BB" && stealOpener;
     const smallBlindResteal = state.heroPosition === "SB" && stealOpener;
-    const restealBluffSet = smallBlindResteal ? SB_STEAL_3BET : LIGHT_3BET;
+    const restealBluffSet = node.bluff.size ? node.bluff : smallBlindResteal ? SB_STEAL_3BET : LIGHT_3BET;
     const bluff3bet = restealBluffSet.has(label) && strength <= 1 && openSize <= 3.5 && callers === 0 && (ip || smallBlindResteal || blindResteal) && !profileCallsTooMuch(profile) && !tableSticky;
-    let callSet = strength >= 3 ? CALL_TIGHT : strength <= 0 ? CALL_WIDE : CALL_NORMAL;
+    let callSet = positionAwareCallSet(state.heroPosition, opener, strength);
     let canCall = callSet.has(label);
     if (!bigOpen && facingOpenCallExtras(opener, openSize, ip, callers).has(label)) canCall = true;
-    if (!bigOpen && state.heroPosition === "BB" && potOdds <= 25 && BB_GOOD_PRICE_DEFEND.has(label)) canCall = true;
+    const goodPriceBlindDefense = state.heroPosition === "BB"
+      && openingRangeScore(opener) <= 0
+      && (sizeBucket === "small" || potOdds <= 24)
+      && BB_GOOD_PRICE_DEFEND.has(label);
+    if (!bigOpen && goodPriceBlindDefense) canCall = true;
+    if (!bigOpen && smallPocketPair(hand) && stack >= 60 && (ip || state.heroPosition === "BB")) canCall = true;
     if (!ip && state.heroPosition !== "BB" && !premium(label)) canCall = canCall && !dominatedOffsuit(label);
     if (bigOpen && !premium(label)) canCall = canCall && (pairAtLeast(hand,"T") || ["AQs","AKs","AQo","AKo","KQs"].includes(label));
-    if (callers > 0 && speculative(hand) && stack >= 100 && ip && !dominatedOffsuit(label)) canCall = true;
+    if (callers > 0 && stack >= 80 && (ip || state.heroPosition === "BB") && POSITION_AWARE_CALLS.multiwayExtra?.has(label) && !dominatedOffsuit(label)) canCall = true;
     const multiplier = (ip ? 3 : 4) + (profileCallsTooMuch(profile) || tableSticky ? 0.25 : 0);
     const threeBetSize = Math.min(stack, Math.max(openSize + 0.5, openSize * multiplier + callers * openSize + profileSizeBias(profile)));
     const plan = postflopPlan(hand,label);
 
-    if (value3bet || bluff3bet) {
-      const isBluff = bluff3bet && !value3bet;
+    if (value3bet) {
       const raiseAction = threeBetSize >= stack ? "ALL-IN" : "3-BET";
-      return recommendationBase(raiseAction, "raise", `${isBluff ? "Pressure" : "Value 3-bet"} with ${label}`, isBluff ? "This hand blocks strong continues and plays better as a raise-or-fold candidate than as a flat call." : "Your hand is strong enough to build the pot against the selected opening range.", threeBetSize, isBluff ? "Medium" : "High", { potOdds }, [
-        isBluff ? "The hand has useful blockers and retains equity when called." : "Worse hands can continue against this range and player profile.",
+      return recommendationBase(raiseAction, "raise", `Value 3-bet with ${label} against ${opener}`, `The position-aware range raises this hand against a ${opener} open.`, threeBetSize, "High", { potOdds }, [
+        "Worse hands can continue against this range and player profile.",
+        aggressorStatNote(stats),
+        linearThreeBetNote(openingRangeScore(opener) >= 1 ? "early" : "normal"),
         `${ip ? "Position" : "Being out of position"} supports a ${multiplier}x base multiplier.`,
         callers ? `The size increases because ${callers} caller${callers > 1 ? "s" : ""} added dead money.` : "A larger raise denies equity and avoids inviting the field in."
-      ], [isBluff ? "Fold if the opener is tight, oversized, or likely to call every 3-bet." : "Calling may under-realize value and invite players behind.", "Do not use a tiny 3-bet that gives everyone an easy price."], "A 3-bet creates a larger pot, but it does not commit the entire stack. Reevaluate a 4-bet using its range and price.", plan, isBluff ? "Use selected blocker hands as low-frequency 3-bets." : "3-bet for value.", profileCallsTooMuch(profile) || tableSticky ? "Remove bluff 3-bets and widen only the value side against sticky callers." : vpip.tight ? "Low average VPIP lets selected resteals rely more on fold equity." : "The selected profile supports the displayed range.");
+      ], ["Calling may under-realize value and invite players behind.", "Do not use a tiny 3-bet that gives everyone an easy price."], "A 3-bet creates a larger pot, but it does not commit the entire stack. Reevaluate a 4-bet using its range and price.", plan, "Use a linear value 3-bet with the top of your continuing range.", profileCallsTooMuch(profile) || tableSticky ? "Keep the 3-bet range value-heavy against sticky callers." : "The selected profile supports the displayed range.");
     }
 
-    if (canCall) return recommendationBase("CALL", "call", `Call with ${label}`, "The hand has enough equity and playability to continue without inflating the pot.", callCost, confidenceFor(bigOpen || !ip, true), { potOdds }, [
+    if (bluff3bet) {
+      const raiseAction = threeBetSize >= stack ? "all-in pressure" : "3-bet";
+      return recommendationBase("MIX", "mix", `Optional polarized ${raiseAction} with ${label}`, "This blocker hand can be used as a selective pressure option, but it is not a mandatory 3-bet.", threeBetSize, "Medium", { potOdds }, [
+        polarizedThreeBetOptionNote(),
+        aggressorStatNote(stats),
+        "The hand has useful blockers and retains equity when called.",
+        `${ip ? "Position" : "Blind pressure"} and the smaller open create the fold equity this option needs.`
+      ], ["Take the call or fold when the opener is tight, oversized, or sticky.", "Do not force polarized 3-bets into opponents who continue too often."], "Treat the raise as a planned pressure option, not an information raise. Know what you will do versus a 4-bet before you click it.", plan, canCall ? "Call is the lower-variance baseline." : "Fold is acceptable without the fold-equity read.", vpip.tight ? "Low average VPIP makes this optional pressure line more attractive." : "Use the polarized 3-bet only when you expect folds.");
+    }
+
+    if (canCall) {
+      const callHeadline = state.heroPosition === "BB"
+        ? `Big blind defense with ${label} vs ${openSize}x ${opener}`
+        : callers
+          ? `Call with ${label} after the ${opener} open plus ${callers} caller${callers > 1 ? "s" : ""}`
+          : `Call with ${label} versus ${opener}`;
+      return recommendationBase("CALL", "call", callHeadline, "The position-, size-, and caller-aware range continues this hand without inflating the pot.", callCost, confidenceFor(bigOpen || !ip, true), { potOdds }, [
       `You need roughly ${potOdds.toFixed(1)}% equity before accounting for future betting.`,
+      aggressorStatNote(stats),
+      realizedEquityNote(hand,label),
       ip ? "Position improves equity realization after the flop." : state.heroPosition === "BB" ? "The big blind's discount supports a wider defense." : "The call is acceptable, but out-of-position realization lowers confidence.",
       callers ? "The extra callers improve immediate price but reduce the value of one-pair hands." : "Calling keeps weaker opens and bluffs in the opponent's range."
-    ], ["3-bet hands that gain more from fold equity or value isolation.", "Fold hands that mainly make dominated top pairs."], "Call because the current price and range justify it, not because folding feels like surrendering the blind.", plan, "Continue by calling.", selectedReads(profile).has("overvaluesPairs") && hand.pair ? "Set value improves, but do not pay any price merely to flop a set." : "No major adjustment without a stronger read.");
+    ], ["3-bet hands that gain more from fold equity or value isolation.", "Fold hands that mainly make dominated top pairs."], "Call because the current price and range justify it, not because folding feels like surrendering the blind.", plan, state.heroPosition === "BB" ? `${sizeBucket} open-size big blind defense versus ${opener}.` : `Position-specific call versus ${opener}.`, selectedReads(profile).has("overvaluesPairs") && hand.pair ? "Set value improves, but do not pay any price merely to flop a set." : "No major adjustment without a stronger read.");
+    }
 
-    return recommendationBase("FOLD", "fold", `Fold ${label} to the open`, "The hand lacks enough strength, position, or nut potential for this price.", 0, "High", { potOdds }, [
+    const vpipPfrGap = stats.vpip != null && stats.vpip >= 35 && stats.pfr != null && stats.pfr <= 10;
+    return recommendationBase("FOLD", "fold", vpipPfrGap ? `Fold ${label}: loose caller, tight raiser` : `Fold ${label} to the ${opener} open`, vpipPfrGap ? "High VPIP does not make this low-PFR opponent's raising range wide." : "The hand lacks enough strength, position, or nut potential for this price.", 0, "High", { potOdds }, [
       bigOpen ? "The larger open worsens your price and lowers implied odds." : "The hand remains outside the default continuing range.",
+      aggressorStatNote(stats),
+      realizedEquityNote(hand,label),
       dominatedOffsuit(label) ? "It frequently makes an expensive second-best top pair." : "It does not realize enough equity against the selected range.",
       strength >= 2 ? "The opener's position or profile indicates a strong range." : "Even a wide opener does not make every hand a profitable defense."
     ], ["Continue wider in the big blind against small late-position opens.", "3-bet selected blockers rather than flatting weak dominated hands."], "The chips already posted as a blind are sunk. Compare the additional call with the pot and range.", plan, "Fold.", profileIsWild(profile) ? "A proven wild opponent can widen value continues, but evidence should come before hero calls." : "Respect the selected range until you observe a clear deviation.");
@@ -1639,13 +1961,12 @@
   function facingThreeBetRecommendation(hand,label) {
     const villain = $("aggressorPosition").value;
     const profile = currentProfile();
+    const stats = aggressorStats();
     const open = validNumber($("heroOpenSize").value, defaultOpenSizeBB());
     const threeBet = validNumber($("aggressorSize").value, 10);
     const stack = validNumber($("effectiveStack").value, 100);
     const ip = inPosition(state.heroPosition, villain);
-    const vpip = tableVpipContext();
-    const tableBias = vpip.tight ? 1 : vpip.veryLoose && ["unknown","standard"].includes(baseProfile(profile)) ? -0.5 : 0;
-    const strength = clamp(threeBetRangeStrength(villain, profile, state.heroPosition) + tableBias, -2, 4);
+    const strength = clamp(threeBetRangeStrength(villain, profile, state.heroPosition) + pfrStrengthBias(stats), -2, 4);
     const callCost = callCostTo(threeBet, open);
     const potBefore = potWithBets([{ position: state.heroPosition, totalBetBB: open }, { position: villain, totalBetBB: threeBet }]);
     const potOdds = potOddsPercent(callCost, potBefore);
@@ -1655,28 +1976,32 @@
     const wideRange = naturallyWide || exploitAggressive;
     const value4bet = ["AA","KK"].includes(label) || (strength <= 1 && ["QQ","AKs","AKo"].includes(label)) || (exploitAggressive && ["JJ","AQs"].includes(label));
     const bluff4bet = !value4bet && LIGHT_4BET.has(label) && naturallyWide && open <= 3 && sizePressure < .22 && !profileCallsTooMuch(profile) && !tableVpipCallsTooMuch();
-    let callStrong = threeBetCallSet(strength, ip, stack).has(label);
+    let callStrong = contextualThreeBetCallSet(strength, ip, stack, villain).has(label);
     if (!ip && !premium(label) && dominatedOffsuit(label)) callStrong = false;
     const plan = postflopPlan(hand,label);
     const fourBetSize = sizePressure >= .25 ? stack : Math.min(stack, Math.max(threeBet + 1, threeBet * (ip ? 2.2 : 2.4) + profileSizeBias(profile)));
 
     if (value4bet || bluff4bet) {
       const isBluff = bluff4bet && !value4bet;
-      return recommendationBase(fourBetSize >= stack ? "ALL-IN" : "4-BET", "raise", isBluff ? `4-bet bluff with ${label}` : `${label} can play for stacks`, isBluff ? "This blocker hand is a better selective 4-bet than a passive call against a wide resteal range." : "The hand is at the top of your range against the selected 3-betting profile.", fourBetSize, isBluff ? "Medium" : "High", { potOdds }, [
+      return recommendationBase(fourBetSize >= stack ? "ALL-IN" : "4-BET", "raise", isBluff ? `Polarized 4-bet bluff with ${label}` : `${label} can play for stacks`, isBluff ? "This blocker hand is a selective 4-bet bluff against a wide resteal range." : "The hand is at the top of your range against the selected 3-betting profile.", fourBetSize, isBluff ? "Medium" : "High", { potOdds }, [
       isBluff ? "The ace or broadway blockers reduce the strongest hands villain can continue with." : "The opponent can continue with worse value hands or overly aggressive bluffs.",
+      aggressorStatNote(stats),
+      isBluff ? "The 4-bet range is polarized here: stack off the top, then add a few blocker bluffs when the 3-bettor can fold." : "This is the value side of a clear 4-bet strategy, not a raise for information.",
       fourBetSize >= stack ? "The stack is shallow enough that a non-all-in 4-bet would leave an awkward remainder." : "The sizing applies maximum pressure without unnecessarily committing every hand.",
       exploitAggressive ? "The observed aggression materially widens your value response." : naturallyWide ? "This is a naturally wider resteal node, so your defense cannot stay as tight as it would versus early position." : "The hand remains strong even without a special read."
-    ], [isBluff ? "Use this at low frequency and fold if the 3-bettor is tight or sticky." : "Calling can be used selectively in position, but may miss value.", "Folding the top of range would be too exploitable."], isBluff ? "This is not a pot-commitment call. It is a planned pressure raise that can still fold to a jam when stacks are deep enough." : "Being willing to stack off with a top-range hand is not the same as being pot committed with a marginal hand.", plan, isBluff ? "Mix in blocker 4-bets versus wide resteals." : "4-bet for value.", wideRange ? "Defend more of your late-position opens against wide 3-bet nodes." : "Use the normal top-range response.");
+    ], [isBluff ? "Use this at low frequency and fold if the 3-bettor is tight or sticky." : "Calling can be used selectively in position, but may miss value.", "Never 4-bet for information only; decide the jam response before raising."], isBluff ? "This is a planned pressure raise, not an information raise. If stacks are deep enough, the blocker bluff can still fold to a jam by design." : "Being willing to stack off with a top-range hand is not the same as being pot committed with a marginal hand.", plan, isBluff ? "Mix in blocker 4-bets versus wide resteals." : "4-bet for value.", wideRange ? "Defend more of your late-position opens against wide 3-bet nodes." : "Use the normal top-range response.");
     }
 
     if (callStrong && sizePressure < .25) return recommendationBase("CALL", "call", `Continue with ${label}`, "The hand is strong enough to defend against this 3-bet without automatically building a stack-sized pot.", callCost, "Medium-high", { potOdds }, [
       `The immediate call requires about ${potOdds.toFixed(1)}% equity.`,
+      aggressorStatNote(stats),
       ip ? "Position supports calling and preserving the opponent's bluffs." : "Out-of-position play makes the defense more difficult, so the range stays tighter.",
       "The 3-bet size is not so large that continuing automatically commits the stack."
-    ], ["4-bet the top of the range for value.", "Fold dominated or speculative opens that cannot realize equity in a low-SPR pot."], "Your original open is sunk. The only question is whether the new call is profitable against the current range and size.", plan, "Call selected strong hands.", profileIsNit(profile) || profileUnderbluffs(profile) || vpip.tight ? "Fold the bottom of this calling range against underbluffed or low-VPIP 3-bet pressure." : wideRange ? "Late-position and blind-resteal nodes justify defending more hands than early-position 3-bets." : "No large deviation is needed.");
+    ], ["4-bet the top of the range for value.", "Fold dominated or speculative opens that cannot realize equity in a low-SPR pot.", "Do not click a 4-bet for information only to hate the jam decision."], "Your original open is sunk. The only question is whether the new call is profitable against the current range and size.", plan, ip ? "Use the in-position call-vs-3-bet range." : "Use the tighter out-of-position call-vs-3-bet range.", profileIsNit(profile) || profileUnderbluffs(profile) || stats.pfr != null && stats.pfr <= 10 ? "Fold the bottom of this calling range against underbluffed or low-PFR pressure." : wideRange ? "Late-position and blind-resteal nodes justify defending more hands than early-position 3-bets." : "No large deviation is needed.");
 
     return recommendationBase("FOLD", "fold", `Release ${label} to the 3-bet`, "The hand is not strong enough to continue in a large pot against the selected range and sizing.", 0, "High", { potOdds }, [
       "Opening a hand does not obligate you to defend it.",
+      aggressorStatNote(stats),
       sizePressure >= .25 ? "The 3-bet consumes a large share of the effective stack." : "The hand remains below the appropriate defense threshold.",
       dominatedOffsuit(label) ? "Domination creates expensive top-pair mistakes." : "The hand lacks enough strength or nut potential."
     ], ["Defend wider against proven wide 3-bettors.", "Position and a smaller size can move borderline hands into the calling range."], "This is the exact spot where sunk-cost thinking becomes expensive. The open is gone. Protect the remaining stack.", plan, "Fold.", wideRange ? "Even in wider resteal nodes, avoid defending the weakest dominated holdings." : "Respect unknown and tight 3-bets.");
@@ -1685,20 +2010,19 @@
   function facingFourBetRecommendation(hand,label) {
     const villain = $("aggressorPosition").value;
     const profile = currentProfile();
+    const stats = aggressorStats();
     const heroThreeBet = validNumber($("heroThreeBetSize").value, 10);
     const fourBet = validNumber($("aggressorSize").value, 23);
     const stack = validNumber($("effectiveStack").value, 100);
     const callCost = callCostTo(fourBet, heroThreeBet);
     const potBefore = potWithBets([{ position: state.heroPosition, totalBetBB: heroThreeBet }, { position: villain, totalBetBB: fourBet }]);
     const potOdds = potOddsPercent(callCost, potBefore);
-    const vpip = tableVpipContext();
-    const tableBias = vpip.tight ? 1 : vpip.veryLoose && ["unknown","standard"].includes(baseProfile(profile)) ? -0.5 : 0;
-    const strength = clamp(fourBetRangeStrength(villain, profile) + tableBias, -2, 4);
+    const strength = clamp(fourBetRangeStrength(villain, profile) + pfrStrengthBias(stats), -2, 4);
     const exploitWide = profileIsWild(profile);
     const stackOffWide = strength <= 0 || exploitWide;
     const callWide = strength <= 1 || exploitWide;
     const premiumStack = ["AA","KK"].includes(label) || (stackOffWide && ["QQ","AKs","AKo"].includes(label));
-    const cautiousCall = ["QQ","AKs","AKo"].includes(label) && fourBet / stack < .28 && callWide && !profileIsNit(profile) && !profileUnderbluffs(profile) && !vpip.tight;
+    const cautiousCall = ["QQ","AKs","AKo"].includes(label) && fourBet / stack < .28 && callWide && !profileIsNit(profile) && !profileUnderbluffs(profile) && !(stats.pfr != null && stats.pfr <= 10);
     const plan = postflopPlan(hand,label);
     if (premiumStack) return recommendationBase("ALL-IN", "raise", `Continue for stacks with ${label}`, "The hand is strong enough against the selected 4-betting range.", stack, "High", { potOdds }, ["The hand sits at the top of your 3-betting range.", stackOffWide ? exploitWide ? "The selected read or profile says this opponent can 4-bet too wide." : `${villain} starts from a very wide steal range, so this 4-bet is not as narrow as an early-position 4-bet.` : "AA and KK remain clear value continues against normal ranges.", "Calling often leaves too little stack behind to improve the decision."], ["Do not slow-play if a call would create an awkward tiny stack-to-pot ratio."], "This is a range-based stack-off, not a decision caused by the chips already invested.", plan, "Jam for value.", stackOffWide ? "Widen carefully to QQ and AK only when position, size, or reads support it." : "Keep the range premium.");
     if (cautiousCall) return recommendationBase("CALL", "call", `Call the 4-bet with ${label}`, "The size and profile allow a controlled continue, especially when position helps.", callCost, "Medium", { potOdds }, [`The direct price is about ${potOdds.toFixed(1)}%.`, "The hand retains strong equity against a non-nit range.", "The remaining stack still allows a postflop decision."], ["Fold against a tight, underbluffed 4-bettor.", "Jam instead when the stack is already shallow."], "Do not call because the pot looks too large to abandon. Call only if the range and remaining stack support it.", plan, "Continue selectively.", "This recommendation is highly opponent-dependent.");
@@ -1712,11 +2036,14 @@
     if (contextError) throw new Error(contextError);
     const hand = classifyCards(state.cards[0], state.cards[1]);
     const label = handLabel(hand);
-    if (state.scenario === "unopened") return unopenedRecommendation(hand,label);
-    if (state.scenario === "limpers") return limpedRecommendation(hand,label);
-    if (["open","openCallers"].includes(state.scenario)) return facingOpenRecommendation(hand,label);
-    if (state.scenario === "threeBet") return facingThreeBetRecommendation(hand,label);
-    return facingFourBetRecommendation(hand,label);
+    const context = preflopActionContext(label);
+    let result;
+    if (state.scenario === "unopened") result = unopenedRecommendation(hand,label);
+    else if (state.scenario === "limpers") result = limpedRecommendation(hand,label);
+    else if (["open","openCallers"].includes(state.scenario)) result = facingOpenRecommendation(hand,label);
+    else if (state.scenario === "threeBet") result = facingThreeBetRecommendation(hand,label);
+    else result = facingFourBetRecommendation(hand,label);
+    return { ...result, context };
   }
 
   function advisorNotes(result, label, hand) {
@@ -1724,15 +2051,15 @@
     const remaining = Math.max(0, positionLayout().length - 1 - preflopIndex(state.heroPosition));
     const stack = Number($("effectiveStack").value || 100);
     const reads = selectedReads().size;
-    const pressure = action === "FOLD"
-      ? ["Protect Stack", "No extra chips is a profitable result when range or price is wrong."]
-      : action === "CALL"
-        ? ["Realize Equity", "Take the price, then avoid turning one pair into a stack-off by default."]
-        : action === "CHECK"
-          ? ["Free Flop", "See the board for no added cost and make the next decision from scratch."]
-          : action === "MIX"
-            ? ["Close Spot", "Let table conditions decide the frequency instead of forcing one rigid answer."]
-            : ["Apply Pressure", "Know the response to a raise before putting the next chips in."];
+    let pressure = ["Apply Pressure", "Know the response to a raise before putting the next chips in."];
+    if (action === "FOLD") pressure = ["Protect Stack", "No extra chips is a profitable result when range or price is wrong."];
+    else if (action === "CALL") pressure = ["Realize Equity", "Take the price, then avoid turning one pair into a stack-off by default."];
+    else if (action === "CHECK") pressure = ["Free Flop", "See the board for no added cost and make the next decision from scratch."];
+    else if (action === "MIX") {
+      pressure = result.headline.includes("polarized")
+        ? ["Optional Pressure", "This is a blocker-based option when fold equity exists, not a forced default."]
+        : ["Close Spot", "Let table conditions decide the frequency instead of forcing one rigid answer."];
+    }
     const price = Number.isFinite(result.metrics?.potOdds)
       ? [`${result.metrics.potOdds.toFixed(1)}% Price`, "Future betting and position still matter more than the raw pot odds."]
       : [`${stack} BB Stack`, stack < 40 ? "Lower stack depth makes dominated calls and speculative flats less forgiving." : "There is enough depth to prioritize range quality and postflop control."];
@@ -1840,7 +2167,7 @@
         </div>
       </article>`;
     $("copyResultBtn").addEventListener("click", copyResult);
-    $("studyHandBtn").addEventListener("click", () => { state.rangePosition = state.heroPosition === "BB" ? (positionLayout().includes("BTN") ? "BTN" : positionLayout()[0]) : state.heroPosition; $("rangePlayerCount").value = state.playerCount; switchView("ranges"); renderRangeLab(); });
+    $("studyHandBtn").addEventListener("click", () => { state.rangePosition = state.heroPosition; $("rangePlayerCount").value = state.playerCount; switchView("ranges"); renderRangeLab(); });
     if (options.saveHistory) saveRecent(result, label);
   }
 
@@ -2431,7 +2758,11 @@
       catch (error) { showToast(error.message || "Check the inputs and try again."); }
     });
     $("resetBtn").addEventListener("click", resetSpot);
-    $("rangePlayerCount").addEventListener("change", () => { state.rangePosition = POSITION_LAYOUTS[Number($("rangePlayerCount").value)].filter((p) => p !== "BB").at(-2) || POSITION_LAYOUTS[Number($("rangePlayerCount").value)][0]; renderRangeLab(); });
+    $("rangePlayerCount").addEventListener("change", () => {
+      const layout = POSITION_LAYOUTS[Number($("rangePlayerCount").value)];
+      if (!layout.includes(state.rangePosition)) state.rangePosition = layout.includes("BTN") ? "BTN" : layout[0];
+      renderRangeLab();
+    });
     ["postflopHandInput","postflopBoardInput","postflopPot","postflopFacingBet","postflopBetSize"].forEach((id) => $(id).addEventListener("input", schedulePostflopAnalyze));
     ["postflopProfile","postflopPosition","postflopInitiative","postflopIterations"].forEach((id) => $(id).addEventListener("change", analyzePostflop));
     $("postflopUseCoachHandBtn").addEventListener("click", useCoachHandForPostflop);
@@ -2455,5 +2786,5 @@
   analyzePostflop();
   renderHistory();
 
-  window.PreflopStudio = { state, model, holdem, reviewTools, OPEN, FRINGE, HU_OPEN, openingSet, openingRangeStrength, threeBetRangeStrength, fourBetRangeStrength, buildRecommendation, validateBettingContext, autoAnalyze, advisorNotes, parseHandEntry, parseReviewLine, analyzePostflop, newDrillHand, answerDrill, analyzeReviewHands, renderRangeLab, renderSessionAdvisor, positionOrderForCount, seatPositionLabel, seatIndexForPosition, seatWheelRotationForSeat, nearestSeatIndexForRotation, setHeroSeatIndex, setHeroPosition, selectSeatFromWheel, rotateSeatWheel, handleSeatWheelKey, openSeatVpipEditor, validateVpipValue, setSeatVpip, seatVpip, averageOpponentVpip, tableVpipContext };
+  window.PreflopStudio = { state, model, holdem, reviewTools, rangeReference, mergeRangeReference, OPEN, FRINGE, HU_OPEN, ISOLATE_VS_LIMP, OVERLIMP, THREEBET_VS_OPEN, openingSet, bbCallDefenseSet, bbDefenseSet, bbDefenseFringeSet, rangeCallSet, rangeThreeBetSet, rangeFourBetSet, rangePrimarySet, rangeSecondarySet, rangeDisplayTitle, rangeDescriptionText, rangeMetricText, rangeActionType, rangeCellClasses, rangeActionDetails, rangeScenarioForAction, rangeLegendItems, openingRangeStrength, threeBetRangeStrength, fourBetRangeStrength, preflopActionContext, buildRecommendation, validateBettingContext, autoAnalyze, advisorNotes, parseHandEntry, parseReviewLine, analyzePostflop, newDrillHand, answerDrill, analyzeReviewHands, renderRangeLab, renderSessionAdvisor, positionOrderForCount, seatPositionLabel, seatIndexForPosition, seatWheelRotationForSeat, nearestSeatIndexForRotation, setHeroSeatIndex, setHeroPosition, selectSeatFromWheel, rotateSeatWheel, handleSeatWheelKey, openSeatVpipEditor, validateVpipValue, setSeatVpip, seatVpip, averageOpponentVpip, tableVpipContext };
 })();

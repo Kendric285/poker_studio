@@ -1069,12 +1069,24 @@ details.advanced summary::-webkit-details-marker { display: none; }
   font-weight: 850;
 }
 .range-cell.open { color: #07140d; background: color-mix(in srgb, var(--green) 80%, white 20%); border-color: transparent; }
+.range-cell.call:not(.open) { color: #071121; background: color-mix(in srgb, var(--blue) 78%, white 22%); border-color: transparent; }
+.range-cell.threebet:not(.open) { color: #150d26; background: color-mix(in srgb, var(--purple) 82%, white 18%); border-color: transparent; }
+.range-cell.fourbet:not(.open) { color: #250808; background: color-mix(in srgb, var(--red) 82%, white 18%); border-color: transparent; }
+.range-cell.open.call { background: linear-gradient(to top, var(--blue) 0 16%, transparent 16%), color-mix(in srgb, var(--green) 80%, white 20%); }
+.range-cell.open.threebet { background: linear-gradient(to top, var(--purple) 0 16%, transparent 16%), color-mix(in srgb, var(--green) 80%, white 20%); }
+.range-cell.open.fourbet { background: linear-gradient(to top, var(--red) 0 16%, transparent 16%), color-mix(in srgb, var(--green) 80%, white 20%); }
 .range-cell.fringe { color: var(--amber); background: var(--amber-soft); border-color: rgba(244,200,106,.28); }
 .range-cell.selected { outline: 3px solid var(--blue); outline-offset: 1px; }
 .range-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; color: var(--muted); font-size: .78rem; }
 .legend-item { display: inline-flex; align-items: center; gap: 6px; }
 .legend-swatch { width: 13px; height: 13px; border-radius: 4px; border: 1px solid var(--line); }
 .legend-swatch.open { background: var(--green); }
+.legend-swatch.call { background: var(--blue); }
+.legend-swatch.threebet { background: var(--purple); }
+.legend-swatch.fourbet { background: var(--red); }
+.legend-swatch.open-call { background: linear-gradient(to top, var(--blue) 0 35%, var(--green) 35%); }
+.legend-swatch.open-threebet { background: linear-gradient(to top, var(--purple) 0 35%, var(--green) 35%); }
+.legend-swatch.open-fourbet { background: linear-gradient(to top, var(--red) 0 35%, var(--green) 35%); }
 .legend-swatch.fringe { background: var(--amber-soft); border-color: rgba(244,200,106,.35); }
 
 .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }

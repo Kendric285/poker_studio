@@ -17,10 +17,17 @@ const sandbox = createSandbox();
 loadBrowserScript("src/poker-model.js", sandbox);
 loadBrowserScript("src/holdem-engine.js", sandbox);
 loadBrowserScript("src/review-parser.js", sandbox);
+loadBrowserScript("src/preflop-ranges.js", sandbox);
 
 const model = sandbox.PreflopModel;
 const holdem = sandbox.HoldemEngine;
 const review = sandbox.PreflopReview;
+const ranges = sandbox.PreflopRanges;
+
+assert.equal(ranges.format, "preflop-studio/reference-v1");
+assert.equal(ranges.ranges.opening.BTN.includes("A2o"), true);
+assert.equal(ranges.sources.some((source) => source.name.includes("Upswing")), true);
+assert.equal(ranges.sources.some((source) => source.name.includes("GTO Wizard")), true);
 
 function createFakeElement(id, value = "") {
   return {
@@ -63,6 +70,9 @@ function loadAdvisorForTest() {
     playersBehind: "normal",
     blindTendency: "normal",
     opponentProfile: "unknown",
+    opponentVPIP: "",
+    opponentPFR: "",
+    limperCount: "1",
     aggressorPosition: "CO",
     aggressorSize: "2.5",
     callerCount: "0",
@@ -128,6 +138,12 @@ assert.equal(model.shouldDefaultOffsuit("KQs"), false);
 assert.equal(model.scenarioAllowed({ playerCount: 9, position: "BB", scenario: "unopened" }), false);
 assert.equal(model.scenarioAllowed({ playerCount: 9, position: "BB", scenario: "open" }), true);
 assert.equal(model.scenarioAllowed({ playerCount: 9, position: "BB", scenario: "threeBet" }), false);
+assert.equal(model.preflopSituation({ actionType: "limpers", numberOfLimpers: 1 }), "oneLimper");
+assert.equal(model.preflopSituation({ actionType: "limpers", numberOfLimpers: 3 }), "multipleLimpers");
+assert.equal(model.preflopSituation({ actionType: "openCallers", numberOfCallers: 1 }), "openWithCallers");
+assert.equal(model.raiseSizeBucket(2.2), "small");
+assert.equal(model.raiseSizeBucket(2.5), "medium");
+assert.equal(model.raiseSizeBucket(3.5), "large");
 const validBlindDefense = model.validateSpot({
   playerCount: 9,
   position: "BB",
@@ -197,6 +213,38 @@ studio.setHeroSeatIndex(0, { snap: true });
 assert.equal(studio.handleSeatWheelKey({ key: "ArrowRight", preventDefault() { keyPrevented = true; } }, { render: false }), true);
 assert.equal(keyPrevented, true);
 assert.equal(studio.state.heroPosition, "SB");
+assert.equal(studio.rangeDisplayTitle("BB"), "BB defense map");
+assert.equal(studio.rangeDisplayTitle("BTN"), "BTN opening map");
+assert.equal(studio.rangeActionType("A5s", "BTN", 9), "fourbet");
+assert.equal(studio.rangeActionType("KQs", "BTN", 9), "threebet");
+assert.equal(studio.rangeActionType("88", "BTN", 9), "call");
+assert.equal(studio.rangeActionType("K7o", "BTN", 9), "open");
+assert.equal(studio.rangeActionType("Q7o", "BTN", 9), "fringe");
+assert.equal(studio.rangeActionType("72o", "BTN", 9), "fold");
+assert.equal(studio.rangeActionType("AA", "BB", 9), "threebet");
+assert.equal(studio.rangeActionType("K6s", "BB", 9), "call");
+assert.equal(studio.rangeCellClasses("A5s", "BTN", 9).join(","), "open,fourbet");
+assert.equal(studio.rangeCellClasses("KQs", "BTN", 9).join(","), "open,threebet");
+assert.equal(studio.rangeCellClasses("88", "BTN", 9).join(","), "open,call");
+assert.equal(studio.rangeCellClasses("K7o", "BTN", 9).join(","), "open");
+assert.equal(studio.rangeCellClasses("AA", "BB", 9).join(","), "threebet");
+assert.equal(studio.rangeCellClasses("K6s", "BB", 9).join(","), "call");
+assert.equal(studio.rangeLegendItems("BB").map((item) => item[0]).join(","), "call,threebet,fringe,");
+assert.equal(studio.rangeMetricText("BTN", { combos: 622 }), "622 opening combinations");
+assert.equal(studio.rangeMetricText("BB", { combos: 120 }), "120 defense combinations");
+assert.equal(studio.rangeScenarioForAction("fourbet", "BTN"), "threeBet");
+assert.equal(studio.rangeScenarioForAction("threebet", "BTN"), "open");
+assert.equal(studio.rangeScenarioForAction("call", "BTN"), "open");
+assert.equal(studio.rangeScenarioForAction("open", "BTN"), "unopened");
+assert.equal(studio.rangeScenarioForAction("call", "BB"), "open");
+assert.equal(studio.rangePrimarySet("BB", 9).has("K6s"), true);
+assert.equal(studio.rangePrimarySet("BB", 9).has("AA"), true);
+assert.equal(studio.rangeSecondarySet("BB", 9).has("Q2s"), true);
+assert.equal(studio.openingSet("BB", 9).size, 0);
+assert.deepEqual(
+  hostObject(studio.mergeRangeReference({ ranges: { opening: { BTN: ["AA"], SB: ["KK"] } } }, { ranges: { opening: { BTN: ["QQ"] } } })),
+  { ranges: { opening: { BTN: ["QQ"], SB: ["KK"] } } }
+);
 
 assert.equal(advisor.recommend({
   position: "BB",
@@ -216,6 +264,31 @@ assert.equal(advisor.recommend({
   label: "K9s",
   fields: { aggressorPosition: "CO", aggressorSize: "2.5" }
 }).action, "CALL");
+const optionalPolarizedThreeBet = advisor.recommend({
+  position: "BTN",
+  scenario: "open",
+  label: "A5s",
+  fields: { aggressorPosition: "CO", aggressorSize: "2.5" }
+});
+assert.equal(optionalPolarizedThreeBet.action, "MIX");
+assert.match(optionalPolarizedThreeBet.headline, /Optional polarized/);
+assert.match(optionalPolarizedThreeBet.summary, /not a mandatory 3-bet/);
+const linearValueThreeBet = advisor.recommend({
+  position: "BTN",
+  scenario: "open",
+  label: "KQs",
+  fields: { aggressorPosition: "CO", aggressorSize: "2.5" }
+});
+assert.equal(linearValueThreeBet.action, "3-BET");
+assert.match(linearValueThreeBet.baseline, /linear value 3-bet/);
+const smallPairFlat = advisor.recommend({
+  position: "BTN",
+  scenario: "open",
+  label: "44",
+  fields: { aggressorPosition: "CO", aggressorSize: "2.5" }
+});
+assert.equal(smallPairFlat.action, "CALL");
+assert.equal(smallPairFlat.why.some((line) => /Small pairs/.test(line)), true);
 assert.equal(advisor.recommend({
   position: "BTN",
   scenario: "threeBet",
@@ -252,12 +325,15 @@ assert.equal(advisor.recommend({
   label: "A5s",
   fields: { aggressorPosition: "BB", heroOpenSize: "2.5", aggressorSize: "10" }
 }).action, "4-BET");
-assert.equal(advisor.recommend({
+const polarizedFourBet = advisor.recommend({
   position: "CO",
   scenario: "threeBet",
   label: "A5s",
   fields: { aggressorPosition: "BTN", heroOpenSize: "2.5", aggressorSize: "7.5" }
-}).action, "4-BET");
+});
+assert.equal(polarizedFourBet.action, "4-BET");
+assert.match(polarizedFourBet.headline, /Polarized 4-bet/);
+assert.equal(polarizedFourBet.alternatives.some((line) => /information/.test(line)), true);
 assert.equal(advisor.recommend({
   position: "SB",
   scenario: "fourBet",
@@ -293,6 +369,132 @@ assert.equal(advisor.recommend({
   fields: { opponentProfile: "custom:station", limperCount: "2" },
   styles: [stationStyle]
 }).sizeBB, 5.75);
+
+// Context-aware preflop regression matrix.
+const utgUnopened = advisor.recommend({
+  position: "UTG",
+  scenario: "unopened",
+  label: "AQs"
+});
+assert.equal(utgUnopened.action, "RAISE");
+assert.equal(utgUnopened.context.situation, "unopened");
+assert.match(utgUnopened.headline, /Open AQs/);
+
+const btnUnopened = advisor.recommend({
+  position: "BTN",
+  scenario: "unopened",
+  label: "Q8o"
+});
+assert.equal(btnUnopened.action, "RAISE");
+assert.match(btnUnopened.summary, /opening range/);
+
+const btnIsolation = advisor.recommend({
+  position: "BTN",
+  scenario: "limpers",
+  label: "KJo",
+  fields: { limperCount: "1" }
+});
+assert.equal(btnIsolation.action, "RAISE");
+assert.equal(btnIsolation.context.situation, "oneLimper");
+assert.match(btnIsolation.headline, /Isolation raise/);
+
+const btnWeakOffsuitVsLimp = advisor.recommend({
+  position: "BTN",
+  scenario: "limpers",
+  label: "Q8o",
+  fields: { limperCount: "1" }
+});
+assert.equal(btnWeakOffsuitVsLimp.action, "FOLD");
+assert.notEqual(btnWeakOffsuitVsLimp.action, btnUnopened.action);
+
+const coMultiwayOverlimp = advisor.recommend({
+  position: "CO",
+  scenario: "limpers",
+  label: "76s",
+  fields: { limperCount: "3" }
+});
+assert.equal(coMultiwayOverlimp.action, "CALL");
+assert.equal(coMultiwayOverlimp.context.situation, "multipleLimpers");
+assert.match(coMultiwayOverlimp.headline, /Overlimp/);
+
+const bbSmallButtonOpen = advisor.recommend({
+  position: "BB",
+  scenario: "open",
+  label: "Q2s",
+  fields: { aggressorPosition: "BTN", aggressorSize: "2.2" }
+});
+assert.equal(bbSmallButtonOpen.action, "CALL");
+assert.equal(bbSmallButtonOpen.context.raiseSizeBucket, "small");
+assert.match(bbSmallButtonOpen.headline, /Big blind defense/);
+
+const bbLargeUtgOpen = advisor.recommend({
+  position: "BB",
+  scenario: "open",
+  label: "A5s",
+  fields: { aggressorPosition: "UTG", aggressorSize: "4" }
+});
+assert.equal(bbLargeUtgOpen.action, "FOLD");
+assert.equal(bbLargeUtgOpen.context.raiseSizeBucket, "large");
+
+const smallBlindVsSteal = advisor.recommend({
+  position: "SB",
+  scenario: "open",
+  label: "A5s",
+  fields: { aggressorPosition: "BTN", aggressorSize: "2.2" }
+});
+assert.equal(smallBlindVsSteal.action, "MIX");
+assert.match(smallBlindVsSteal.headline, /polarized/i);
+
+const highVpipLowPfrRaise = advisor.recommend({
+  position: "BTN",
+  scenario: "open",
+  label: "A5s",
+  fields: { aggressorPosition: "CO", aggressorSize: "2.5", opponentVPIP: "50", opponentPFR: "6" }
+});
+assert.equal(highVpipLowPfrRaise.action, "FOLD");
+assert.match(highVpipLowPfrRaise.summary, /High VPIP does not/);
+assert.equal(highVpipLowPfrRaise.context.opponentPFR, 6);
+
+const highVpipHighPfrRaise = advisor.recommend({
+  position: "BTN",
+  scenario: "open",
+  label: "A5s",
+  fields: { aggressorPosition: "CO", aggressorSize: "2.5", opponentVPIP: "50", opponentPFR: "30" }
+});
+assert.equal(highVpipHighPfrRaise.action, "MIX");
+assert.notEqual(highVpipHighPfrRaise.action, highVpipLowPfrRaise.action);
+assert.equal(highVpipHighPfrRaise.why.some((line) => /genuinely wide/.test(line)), true);
+
+const openPlusCaller = advisor.recommend({
+  position: "BTN",
+  scenario: "openCallers",
+  label: "76s",
+  fields: { aggressorPosition: "HJ", aggressorSize: "2.5", callerCount: "1" }
+});
+assert.equal(openPlusCaller.action, "CALL");
+assert.equal(openPlusCaller.context.situation, "openWithCallers");
+assert.match(openPlusCaller.headline, /plus 1 caller/);
+
+const inPositionVsThreeBet = advisor.recommend({
+  position: "BTN",
+  scenario: "threeBet",
+  label: "77",
+  fields: { aggressorPosition: "BB", heroOpenSize: "2.5", aggressorSize: "10" }
+});
+assert.equal(inPositionVsThreeBet.action, "CALL");
+assert.match(inPositionVsThreeBet.baseline, /in-position/);
+
+const outOfPositionVsThreeBet = advisor.recommend({
+  position: "HJ",
+  scenario: "threeBet",
+  label: "77",
+  fields: { aggressorPosition: "BTN", heroOpenSize: "2.5", aggressorSize: "10" }
+});
+assert.equal(outOfPositionVsThreeBet.action, "FOLD");
+assert.notEqual(outOfPositionVsThreeBet.action, inPositionVsThreeBet.action);
+
+assert.equal(new Set(ranges.ranges.isolateVsLimp.one.late).size, ranges.ranges.isolateVsLimp.one.late.length);
+assert.equal(new Set(ranges.ranges.overlimp.multiple.late).size, ranges.ranges.overlimp.multiple.late.length);
 
 function hostObject(value) {
   return JSON.parse(JSON.stringify(value));

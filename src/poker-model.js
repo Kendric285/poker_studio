@@ -136,6 +136,24 @@
     return ({ unopened: "Unopened pot", limpers: "Limped pot", open: "Facing open", openCallers: "Open plus callers", threeBet: "Facing 3-bet", fourBet: "Facing 4-bet" })[scenario] || scenario;
   }
 
+  function preflopSituation({ actionType, numberOfLimpers = 0, numberOfCallers = 0 } = {}) {
+    if (actionType === "unopened") return "unopened";
+    if (actionType === "limpers") return Number(numberOfLimpers) > 1 ? "multipleLimpers" : "oneLimper";
+    if (actionType === "openCallers" || actionType === "open" && Number(numberOfCallers) > 0) return "openWithCallers";
+    if (actionType === "open") return "oneOpen";
+    if (actionType === "threeBet") return "facingThreeBet";
+    if (actionType === "fourBet") return "facingFourBet";
+    return actionType || "unknown";
+  }
+
+  function raiseSizeBucket(raiseSize) {
+    const size = Number(raiseSize);
+    if (!Number.isFinite(size) || size <= 0) return "unknown";
+    if (size <= 2.25) return "small";
+    if (size <= 3) return "medium";
+    return "large";
+  }
+
   function actionBucket(action) {
     if (action === "FOLD") return "fold";
     if (action === "CALL" || action === "CHECK") return "call";
@@ -217,6 +235,8 @@
     preflopIndex,
     scenarioAllowed,
     scenarioName,
+    preflopSituation,
+    raiseSizeBucket,
     actionBucket,
     bucketName,
     blindContributionBB,

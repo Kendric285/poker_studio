@@ -6,6 +6,8 @@
   <meta name="color-scheme" content="dark light" />
   <meta name="description" content="A configurable no-limit hold'em preflop decision coach for 2 to 10 players and any cash-game stakes." />
   <title>Preflop Studio</title>
+  <link rel="icon" type="image/png" href="src/spades.png" />
+  <link rel="apple-touch-icon" href="src/spades.png" />
   <link rel="stylesheet" href="src/styles.css" />
 </head>
 <body>
@@ -299,15 +301,15 @@
       </div>
       <div class="range-layout">
         <aside class="panel range-sidebar">
-          <h2>Opening position</h2>
-          <p>These are simplified baseline ranges for unopened pots. Real recommendations still change with stacks, rake, antes, player tendencies, and format.</p>
+          <h2>Position</h2>
+          <p>These are simplified baseline maps for first-in opens and big blind defense. Real recommendations still change with stacks, rake, antes, player tendencies, and format.</p>
           <div class="position-list" id="rangePositionList"></div>
           <div class="field"><label for="rangePlayerCount">Table size</label><select id="rangePlayerCount"><option value="2">2-handed</option><option value="3">3-handed</option><option value="4">4-handed</option><option value="5">5-handed</option><option value="6">6-handed</option><option value="7">7-handed</option><option value="8">8-handed</option><option value="9" selected>9-handed</option><option value="10">10-handed</option></select></div>
         </aside>
         <section class="panel range-main">
-          <div class="range-summary"><div><h2 id="rangeTitle">BTN opening range</h2><p id="rangeDescription">A wide late-position baseline.</p></div><div class="range-number"><strong id="rangePercent">0%</strong><span id="rangeCombos">0 combinations</span></div></div>
+          <div class="range-summary"><div><h2 id="rangeTitle">BTN opening map</h2><p id="rangeDescription">Green is the unopened open; a stripe marks the call, 3-bet, or 4-bet branch.</p></div><div class="range-number"><strong id="rangePercent">0%</strong><span id="rangeCombos">0 opening combinations</span></div></div>
           <div class="range-matrix" id="rangeMatrix"></div>
-          <div class="range-legend"><span class="legend-item"><span class="legend-swatch open"></span>Baseline open</span><span class="legend-item"><span class="legend-swatch fringe"></span>Borderline exploit</span><span class="legend-item"><span class="legend-swatch"></span>Fold by default</span></div>
+          <div class="range-legend" id="rangeLegend"><span class="legend-item"><span class="legend-swatch open"></span>Open first-in</span><span class="legend-item"><span class="legend-swatch open-call"></span>Open + call branch</span><span class="legend-item"><span class="legend-swatch open-threebet"></span>Open + 3-bet branch</span><span class="legend-item"><span class="legend-swatch open-fourbet"></span>Open + 4-bet branch</span><span class="legend-item"><span class="legend-swatch fringe"></span>Borderline exploit</span><span class="legend-item"><span class="legend-swatch"></span>Fold by default</span></div>
         </section>
       </div>
     </section>
@@ -380,6 +382,7 @@
   <script src="src/poker-model.js" defer></script>
   <script src="src/holdem-engine.js" defer></script>
   <script src="src/review-parser.js" defer></script>
+  <script src="src/preflop-ranges.js" defer></script>
   <script src="src/app.js" defer></script>
 </body>
 </html>
